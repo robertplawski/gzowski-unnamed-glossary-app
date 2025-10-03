@@ -12,7 +12,11 @@
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts"
 	},
 	"dependencies": {
+		"@libsql/client": "^0.15.15",
 		"@opennextjs/cloudflare": "^1.3.0",
+		"dotenv": "^17.2.3",
+		"drizzle-kit": "^0.31.5",
+		"drizzle-orm": "^0.44.6",
 		"next": "15.4.6",
 		"react": "19.1.0",
 		"react-dom": "19.1.0"
