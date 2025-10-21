@@ -1,0 +1,32 @@
+{
+	"name": "server",
+	"main": "src/index.ts",
+	"type": "module",
+	"scripts": {
+		"build": "wrangler deploy --dry-run",
+		"check-types": "tsc -b",
+		"compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
+		"dev": "wrangler dev --port=3000",
+		"start": "wrangler dev",
+		"deploy": "wrangler deploy",
+		"cf-typegen": "wrangler types --env-interface CloudflareBindings"
+	},
+	"dependencies": {
+		"hono": "^4.8.2",
+		"@orpc/server": "^1.9.0",
+		"@orpc/openapi": "^1.9.0",
+		"@orpc/zod": "^1.9.0",
+		"better-auth": "^1.3.13",
+		"dotenv": "^17.2.2",
+		"zod": "^4.1.11",
+		"@gzowski-unnamed-glossary-app/api": "*",
+		"@gzowski-unnamed-glossary-app/auth": "*",
+		"@gzowski-unnamed-glossary-app/db": "*"
+	},
+	"devDependencies": {
+		"typescript": "^5.8.2",
+		"tsdown": "^0.15.5",
+		"wrangler": "^4.40.3",
+		"@types/node": "^22.13.11"
+	}
+}

@@ -1,0 +1,32 @@
+{
+	"name": "gzowski-unnamed-glossary-app-server",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-06-15",
+	"compatibility_flags": ["nodejs_compat"],
+	"vars": {
+		"NODE_ENV": "production"
+		// Add public environment variables here
+		// Example: "CORS_ORIGIN": "https://your-domain.com"
+	},
+	// For sensitive data, use:
+	// wrangler secret put SECRET_NAME
+	// Don't add secrets to "vars" - they're visible in the dashboard!
+
+	// To set up D1 database:
+	// 1. Run: wrangler login
+	// 2. Run: wrangler d1 create your-database-name
+	// 3. Copy the output and paste below
+	// Then run migrations:
+	// bun db:generate
+	// To apply migrations locally, run:
+	// wrangler d1 migrations apply YOUR_DB_NAME --local
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "guga",
+			"database_id": "1be08cec-2238-4f8f-8f9d-7fdc6b480046",
+			"preview_database_id": "local-guga",
+			"migrations_dir": "../../packages/db/src/migrations"
+		}
+	]
+}
