@@ -1,4 +1,4 @@
-import { publicProcedure, protectedProcedure } from "../index";
+import { publicProcedure, elevatedProcedure } from "../index";
 import { eq } from "drizzle-orm";
 import type { RouterClient } from "@orpc/server";
 import { db } from "@gzowski-unnamed-glossary-app/db";
@@ -36,7 +36,7 @@ export const dictionaryRouter = {
 		}),
 
 	// Create a new dictionary (private)
-	create: protectedProcedure
+	create: elevatedProcedure
 		.input(dictionaryCreateSchema)
 		.handler(async ({ input: { name, description } }) => {
 			const id = randomUUID();
@@ -52,7 +52,7 @@ export const dictionaryRouter = {
 		}),
 
 	// Update dictionary (private)
-	update: protectedProcedure
+	update: elevatedProcedure
 		.input(dictionaryUpdateSchema)
 		.handler(async ({ input: { id, name, description } }) => {
 			await db
@@ -68,7 +68,7 @@ export const dictionaryRouter = {
 		}),
 
 	// Delete dictionary (private)
-	delete: protectedProcedure
+	delete: elevatedProcedure
 		.input(dictionaryIdSchema)
 		.handler(async ({ input: { id } }) => {
 			await db.delete(dictionary).where(eq(dictionary.id, id));
