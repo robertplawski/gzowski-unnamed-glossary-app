@@ -23,10 +23,10 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "YOUR_DB_NAME",
-			"database_id": "YOUR_DB_ID",
-			"preview_database_id": "local-test-db",
-			"migrations_dir": "./src/db/migrations"
+			"database_name": "guga",
+			"database_id": "1be08cec-2238-4f8f-8f9d-7fdc6b480046",
+			"preview_database_id": "local-guga",
+			"migrations_dir": "../../packages/db/src/migrations"
 		}
 	]
 }

@@ -1,8 +1,9 @@
-import { expo } from '@better-auth/expo';
+import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { polar, checkout, portal } from "@polar-sh/better-auth";
-import { polarClient } from "./lib/payments";
+
+/*import { polar, checkout, portal } from "@polar-sh/better-auth";
+import { polarClient } from "./lib/payments";*/
 import { db } from "@gzowski-unnamed-glossary-app/db";
 import * as schema from "@gzowski-unnamed-glossary-app/db/schema/auth";
 import { env } from "cloudflare:workers";
@@ -40,7 +41,7 @@ export const auth = betterAuth({
 		// },
 	},
 	plugins: [
-		polar({
+		/*polar({
 			client: polarClient,
 			createCustomerOnSignUp: true,
 			enableCustomerPortal: true,
@@ -57,7 +58,7 @@ export const auth = betterAuth({
 				}),
 				portal(),
 			],
-		}),
-    expo()
-  ],
+		}),*/
+		expo(),
+	],
 });
