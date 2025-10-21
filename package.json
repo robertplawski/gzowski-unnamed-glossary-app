@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "dotenv": "^17.2.2",
+    "tanstack": "^1.0.3",
     "zod": "^4.1.11"
   },
   "devDependencies": {

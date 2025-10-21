@@ -1,31 +1,11 @@
-import { Link } from "@tanstack/react-router";
-import { ModeToggle } from "./mode-toggle";
-import UserMenu from "./user-menu";
+import { MenuIcon } from "lucide-react";
+import { type SetStateAction } from "react";
+const HeaderComponent = ({setter}:{setter:React.Dispatch<SetStateAction<boolean>>}) => {
+return(
 
-export default function Header() {
-	const links = [
-		{ to: "/", label: "Home" },
-		{ to: "/dashboard", label: "Dashboard" },
-	] as const;
-
-	return (
-		<div>
-			<div className="flex flex-row items-center justify-between px-2 py-1">
-				<nav className="flex gap-4 text-lg">
-					{links.map(({ to, label }) => {
-						return (
-							<Link key={to} to={to}>
-								{label}
-							</Link>
-						);
-					})}
-				</nav>
-				<div className="flex items-center gap-2">
-					<ModeToggle />
-					<UserMenu />
-				</div>
-			</div>
-			<hr />
-		</div>
-	);
+    <header className="h-15 absolute top-0 flex justify-between p-4 items-center flex-row w-[100%]">
+        <span className="text-blue-900 tracking-wide text-3xl font-bold">GUGA</span> <button className="font-bold text-xl h-10 w-10 bg-card text-center flex justify-center rounded-lg border-1 border-ring items-center hover:bg-secondary hover:scale-[105%] transition-all duration-200 hover:duration-200"><MenuIcon onClick={()=> setter(prev => !prev)}size={20}/></button>
+    </header>
+)
 }
+export default HeaderComponent;

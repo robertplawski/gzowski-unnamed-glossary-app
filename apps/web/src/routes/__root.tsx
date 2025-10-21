@@ -9,6 +9,7 @@ import { useState } from "react";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import type { AppRouterClient } from "@gzowski-unnamed-glossary-app/api/routers/index";
 import { createORPCClient } from "@orpc/client";
+import HeaderComponent from "@/components/header";
 import {
 	HeadContent,
 	Outlet,
@@ -51,7 +52,7 @@ function RootComponent() {
 
 	const [client] = useState<AppRouterClient>(() => createORPCClient(link));
 	const [orpcUtils] = useState(() => createTanstackQueryUtils(client));
-
+	const[state,setState ] = useState<boolean>(false);
 	return (
 		<>
 			<HeadContent />
@@ -62,7 +63,7 @@ function RootComponent() {
 				storageKey="vite-ui-theme"
 			>
 				<div className="grid grid-rows-[auto_1fr] h-svh">
-					<Header />
+					<HeaderComponent setter={setState}/> 
 					{isFetching ? <Loader /> : <Outlet />}
 				</div>
 				<Toaster richColors />
