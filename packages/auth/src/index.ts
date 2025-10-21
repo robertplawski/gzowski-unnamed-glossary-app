@@ -7,6 +7,7 @@ import { polarClient } from "./lib/payments";*/
 import { db } from "@gzowski-unnamed-glossary-app/db";
 import * as schema from "@gzowski-unnamed-glossary-app/db/schema/auth";
 import { env } from "cloudflare:workers";
+import { openAPI } from "better-auth/plugins";
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
@@ -41,6 +42,7 @@ export const auth = betterAuth({
 		// },
 	},
 	plugins: [
+		openAPI(),
 		/*polar({
 			client: polarClient,
 			createCustomerOnSignUp: true,
