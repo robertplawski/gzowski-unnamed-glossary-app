@@ -4,22 +4,22 @@ import type { RouterClient } from "@orpc/server";
 import { db } from "@gzowski-unnamed-glossary-app/db";
 import { dictionary } from "@gzowski-unnamed-glossary-app/db/schema/dictionary";
 import { z } from "zod";
+import { randomUUID } from "crypto";
 
 // Zod schemas
 const dictionaryCreateSchema = z.object({
-	id: z.string(),
 	name: z.string().min(1),
 	description: z.string().optional(),
 });
 
 const dictionaryUpdateSchema = z.object({
-	id: z.string(),
+	id: z.uuid(),
 	name: z.string().min(1).optional(),
 	description: z.string().optional(),
 });
 
 const dictionaryIdSchema = z.object({
-	id: z.string(),
+	id: z.uuid(),
 });
 
 export const dictionaryRouter = {
@@ -35,10 +35,11 @@ export const dictionaryRouter = {
 			return db.select().from(dictionary).where(eq(dictionary.id, id)).get();
 		}),
 
-	// Create a new dictionary (public)
-	create: publicProcedure
+	// Create a new dictionary (private)
+	create: protectedProcedure
 		.input(dictionaryCreateSchema)
-		.handler(async ({ input: { id, name, description } }) => {
+		.handler(async ({ input: { name, description } }) => {
+			const id = randomUUID();
 			const timestamp = new Date();
 			await db.insert(dictionary).values({
 				id,
@@ -47,7 +48,7 @@ export const dictionaryRouter = {
 				createdAt: timestamp,
 				updatedAt: timestamp,
 			});
-			return { success: true };
+			return { success: true, id };
 		}),
 
 	// Update dictionary (private)
