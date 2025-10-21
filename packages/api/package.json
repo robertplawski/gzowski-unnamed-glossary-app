@@ -1,0 +1,34 @@
+{
+  "name": "@gzowski-unnamed-glossary-app/api",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./src/*.ts"
+    }
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsdown"
+  },
+  "devDependencies": {
+    "tsdown": "^0.15.5"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@orpc/server": "^1.9.0",
+    "@orpc/client": "^1.9.0",
+    "@orpc/openapi": "^1.9.0",
+    "@orpc/zod": "^1.9.0",
+    "hono": "^4.8.2",
+    "dotenv": "^17.2.2",
+    "zod": "^4.1.11",
+    "@gzowski-unnamed-glossary-app/auth": "*",
+    "@gzowski-unnamed-glossary-app/db": "*"
+  }
+}
