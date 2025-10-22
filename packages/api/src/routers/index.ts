@@ -6,7 +6,7 @@ export const appRouter = {
 	healthCheck: publicProcedure.handler(() => {
 		return "OK";
 	}),
-	dictionary: dictionaryRouter,
+	...dictionaryRouter,
 };
 export type AppRouter = typeof appRouter;
 export type AppRouterClient = RouterClient<typeof appRouter>;
