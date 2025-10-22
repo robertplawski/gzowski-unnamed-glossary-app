@@ -1,10 +1,6 @@
-import {
-	publicProcedure,
-	protectedProcedure,
-	elevatedProcedure,
-} from "../index";
+import { publicProcedure, protectedProcedure } from "../index";
 import { eq, and } from "drizzle-orm";
-import type { RouterClient } from "@orpc/server";
+import { ORPCError, type RouterClient } from "@orpc/server";
 import { db } from "@gzowski-unnamed-glossary-app/db";
 import {
 	dictionary,
@@ -15,6 +11,7 @@ import {
 	entryVote,
 	commentVote,
 } from "@gzowski-unnamed-glossary-app/db/schema/dictionary";
+import { auth } from "@gzowski-unnamed-glossary-app/auth";
 import { z } from "zod";
 import { randomUUID } from "crypto";
 
@@ -156,9 +153,21 @@ export const dictionaryRouter = {
 			}),
 
 		// Admin/moderator only endpoints
-		create: elevatedProcedure
+		create: protectedProcedure
 			.input(dictionaryCreateSchema)
-			.handler(async ({ input: { name, description } }) => {
+			.handler(async ({ input: { name, description }, context }) => {
+				// Check if user has permission to create dictionaries
+				const { success: hasPermission } = await auth.api.userHasPermission({
+					body: {
+						userId: context.session.user.id,
+						permission: { dictionary: ["create"] },
+					},
+				});
+
+				if (!hasPermission) {
+					throw new ORPCError("FORBIDDEN");
+				}
+
 				const id = randomUUID();
 				const timestamp = new Date();
 				await db.insert(dictionary).values({
@@ -171,9 +180,21 @@ export const dictionaryRouter = {
 				return { success: true, id };
 			}),
 
-		update: elevatedProcedure
+		update: protectedProcedure
 			.input(dictionaryUpdateSchema)
-			.handler(async ({ input: { id, name, description } }) => {
+			.handler(async ({ input: { id, name, description }, context }) => {
+				// Check if user has permission to update dictionaries
+				const { success: hasPermission } = await auth.api.userHasPermission({
+					body: {
+						userId: context.session.user.id,
+						permission: { dictionary: ["update"] },
+					},
+				});
+
+				if (!hasPermission) {
+					throw new ORPCError("FORBIDDEN");
+				}
+
 				const updates: Record<string, any> = {
 					updatedAt: new Date(),
 				};
@@ -185,9 +206,21 @@ export const dictionaryRouter = {
 				return { success: true };
 			}),
 
-		delete: elevatedProcedure
+		delete: protectedProcedure
 			.input(dictionaryIdSchema)
-			.handler(async ({ input: { id } }) => {
+			.handler(async ({ input: { id }, context }) => {
+				// Check if user has permission to delete dictionaries
+				const { success: hasPermission } = await auth.api.userHasPermission({
+					body: {
+						userId: context.session.user.id,
+						permission: { dictionary: ["delete"] },
+					},
+				});
+
+				if (!hasPermission) {
+					throw new ORPCError("FORBIDDEN");
+				}
+
 				await db.delete(dictionary).where(eq(dictionary.id, id));
 				return { success: true };
 			}),
@@ -230,7 +263,20 @@ export const dictionaryRouter = {
 						example,
 						notes,
 					},
+					context,
 				}) => {
+					// Check if user has permission to create entries
+					const { success: hasPermission } = await auth.api.userHasPermission({
+						body: {
+							userId: context.session.user.id,
+							permission: { entry: ["create"] },
+						},
+					});
+
+					if (!hasPermission) {
+						throw new ORPCError("FORBIDDEN");
+					}
+
 					const id = randomUUID();
 					const timestamp = new Date();
 					await db.insert(entry).values({
@@ -251,7 +297,7 @@ export const dictionaryRouter = {
 			),
 
 		// Admin/moderator can update any entry
-		update: elevatedProcedure
+		update: protectedProcedure
 			.input(entryUpdateSchema)
 			.handler(
 				async ({
@@ -264,7 +310,20 @@ export const dictionaryRouter = {
 						example,
 						notes,
 					},
+					context,
 				}) => {
+					// Check if user has permission to update entries
+					const { success: hasPermission } = await auth.api.userHasPermission({
+						body: {
+							userId: context.session.user.id,
+							permission: { entry: ["update"] },
+						},
+					});
+
+					if (!hasPermission) {
+						throw new ORPCError("FORBIDDEN");
+					}
+
 					const updates: Record<string, any> = {
 						updatedAt: new Date(),
 					};
@@ -284,15 +343,27 @@ export const dictionaryRouter = {
 			),
 
 		// Admin/moderator can delete entries
-		delete: elevatedProcedure
+		delete: protectedProcedure
 			.input(entryIdSchema)
-			.handler(async ({ input: { id } }) => {
+			.handler(async ({ input: { id }, context }) => {
+				// Check if user has permission to delete entries
+				const { success: hasPermission } = await auth.api.userHasPermission({
+					body: {
+						userId: context.session.user.id,
+						permission: { entry: ["delete"] },
+					},
+				});
+
+				if (!hasPermission) {
+					throw new ORPCError("FORBIDDEN");
+				}
+
 				await db.delete(entry).where(eq(entry.id, id));
 				return { success: true };
 			}),
 	},
 
-	// ===== Tag Routes =====
+	/*// ===== Tag Routes =====
 	tag: {
 		getAll: publicProcedure.handler(async () => {
 			return db.select().from(tag).all();
@@ -307,7 +378,19 @@ export const dictionaryRouter = {
 		// Authenticated users can create tags
 		create: protectedProcedure
 			.input(tagCreateSchema)
-			.handler(async ({ input: { name } }) => {
+			.handler(async ({ input: { name }, context }) => {
+				// Check if user has permission to create tags
+				const { success: hasPermission } = await auth.api.userHasPermission({
+					body: {
+						userId: context.session.user.id,
+						permission: { tag: ["create"] },
+					},
+				});
+
+				if (!hasPermission) {
+					throw new ORPCError("FORBIDDEN");
+				}
+
 				const id = randomUUID();
 				const timestamp = new Date();
 				await db.insert(tag).values({
@@ -320,9 +403,21 @@ export const dictionaryRouter = {
 			}),
 
 		// Admin/moderator can delete tags
-		delete: elevatedProcedure
+		delete: protectedProcedure
 			.input(tagIdSchema)
-			.handler(async ({ input: { id } }) => {
+			.handler(async ({ input: { id }, context }) => {
+				// Check if user has permission to delete tags
+				const { success: hasPermission } = await auth.api.userHasPermission({
+					body: {
+						userId: context.session.user.id,
+						permission: { tag: ["delete"] },
+					},
+				});
+
+				if (!hasPermission) {
+					throw new ORPCError("FORBIDDEN");
+				}
+
 				await db.delete(tag).where(eq(tag.id, id));
 				return { success: true };
 			}),
@@ -344,7 +439,19 @@ export const dictionaryRouter = {
 		// Authenticated users can tag entries
 		create: protectedProcedure
 			.input(entryTagCreateSchema)
-			.handler(async ({ input: { entryId, tagId } }) => {
+			.handler(async ({ input: { entryId, tagId }, context }) => {
+				// Check if user has permission to create entry tags
+				const { success: hasPermission } = await auth.api.userHasPermission({
+					body: {
+						userId: context.session.user.id,
+						permission: { entryTag: ["create"] },
+					},
+				});
+
+				if (!hasPermission) {
+					throw new ORPCError("FORBIDDEN");
+				}
+
 				await db.insert(entryTag).values({
 					entryId,
 					tagId,
@@ -353,15 +460,27 @@ export const dictionaryRouter = {
 			}),
 
 		// Admin/moderator can remove tags from entries
-		delete: elevatedProcedure
+		delete: protectedProcedure
 			.input(entryTagDeleteSchema)
-			.handler(async ({ input: { entryId, tagId } }) => {
+			.handler(async ({ input: { entryId, tagId }, context }) => {
+				// Check if user has permission to delete entry tags
+				const { success: hasPermission } = await auth.api.userHasPermission({
+					body: {
+						userId: context.session.user.id,
+						permission: { entryTag: ["delete"] },
+					},
+				});
+
+				if (!hasPermission) {
+					throw new ORPCError("FORBIDDEN");
+				}
+
 				await db
 					.delete(entryTag)
 					.where(and(eq(entryTag.entryId, entryId), eq(entryTag.tagId, tagId)));
 				return { success: true };
 			}),
-	},
+	},*/
 
 	// ===== Comment Routes =====
 	comment: {
@@ -385,6 +504,18 @@ export const dictionaryRouter = {
 		create: protectedProcedure
 			.input(commentCreateSchema)
 			.handler(async ({ input: { entryId, text, image }, context }) => {
+				// Check if user has permission to create comments
+				const { success: hasPermission } = await auth.api.userHasPermission({
+					body: {
+						userId: context.session.user.id,
+						permission: { comment: ["create"] },
+					},
+				});
+
+				if (!hasPermission) {
+					throw new ORPCError("FORBIDDEN");
+				}
+
 				const userId = context.session.user.id;
 
 				const id = randomUUID();
@@ -403,9 +534,21 @@ export const dictionaryRouter = {
 			}),
 
 		// Admin/moderator can update any comment
-		update: elevatedProcedure
+		update: protectedProcedure
 			.input(commentUpdateSchema)
-			.handler(async ({ input: { id, text, image } }) => {
+			.handler(async ({ input: { id, text, image }, context }) => {
+				// Check if user has permission to update comments
+				const { success: hasPermission } = await auth.api.userHasPermission({
+					body: {
+						userId: context.session.user.id,
+						permission: { comment: ["update"] },
+					},
+				});
+
+				if (!hasPermission) {
+					throw new ORPCError("FORBIDDEN");
+				}
+
 				const updates: Record<string, any> = {
 					updatedAt: new Date(),
 				};
@@ -417,9 +560,21 @@ export const dictionaryRouter = {
 			}),
 
 		// Admin/moderator can delete any comment
-		delete: elevatedProcedure
+		delete: protectedProcedure
 			.input(commentIdSchema)
-			.handler(async ({ input: { id } }) => {
+			.handler(async ({ input: { id }, context }) => {
+				// Check if user has permission to delete comments
+				const { success: hasPermission } = await auth.api.userHasPermission({
+					body: {
+						userId: context.session.user.id,
+						permission: { comment: ["delete"] },
+					},
+				});
+
+				if (!hasPermission) {
+					throw new ORPCError("FORBIDDEN");
+				}
+
 				await db.delete(comment).where(eq(comment.id, id));
 				return { success: true };
 			}),
