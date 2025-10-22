@@ -11,13 +11,14 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { Link } from "@tanstack/react-router";
+import { LucideUser } from "lucide-react";
 
 export default function UserMenu() {
 	const navigate = useNavigate();
 	const { data: session, isPending } = authClient.useSession();
 
 	if (isPending) {
-		return <Skeleton className="h-9 w-24" />;
+		return <Skeleton className="h-9 w-11 md:w-23" />;
 	}
 
 	if (!session) {
@@ -31,7 +32,10 @@ export default function UserMenu() {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="outline">{session.user.name}</Button>
+				<Button variant="outline">
+					<LucideUser />
+					<p className="hidden md:block">{session.user.name}</p>
+				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className="bg-card">
 				<DropdownMenuLabel>My Account</DropdownMenuLabel>
