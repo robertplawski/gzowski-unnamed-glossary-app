@@ -1,49 +1,49 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { orpc } from "@/utils/orpc";
-import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/")({
 	component: HomeComponent,
 });
 
-const TITLE_TEXT = `
- ██████╗ ███████╗████████╗████████╗███████╗██████╗
- ██╔══██╗██╔════╝╚══██╔══╝╚══██╔══╝██╔════╝██╔══██╗
- ██████╔╝█████╗     ██║      ██║   █████╗  ██████╔╝
- ██╔══██╗██╔══╝     ██║      ██║   ██╔══╝  ██╔══██╗
- ██████╔╝███████╗   ██║      ██║   ███████╗██║  ██║
- ╚═════╝ ╚══════╝   ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
+interface TooltipAbbrProps {
+	abbr: string;
+	definition: string;
+}
 
- ████████╗    ███████╗████████╗ █████╗  ██████╗██╗  ██╗
- ╚══██╔══╝    ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║ ██╔╝
-    ██║       ███████╗   ██║   ███████║██║     █████╔╝
-    ██║       ╚════██║   ██║   ██╔══██║██║     ██╔═██╗
-    ██║       ███████║   ██║   ██║  ██║╚██████╗██║  ██╗
-    ╚═╝       ╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- `;
+const TooltipAbbr = ({ abbr, definition }: TooltipAbbrProps) => {
+	return (
+		<span className="group relative inline-block">
+			<abbr className="border-b-8 border-dotted border-white no-underline cursor-help">
+				{abbr}
+			</abbr>
+			<span className="absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-neutral-800 px-2 py-1 text-sm text-white opacity-0 transition-opacity group-hover:block group-hover:opacity-100">
+				{definition}
+			</span>
+		</span>
+	);
+};
 
 function HomeComponent() {
-	const healthCheck = useQuery(orpc.healthCheck.queryOptions());
-
 	return (
-		<div className="container mx-auto max-w-3xl px-4 py-2">
-			<pre className="overflow-x-auto font-mono text-sm">{TITLE_TEXT}</pre>
-			<div className="grid gap-6">
-				<section className="rounded-lg border p-4">
-					<h2 className="mb-2 font-medium">API Status</h2>
-					<div className="flex items-center gap-2">
-						<div
-							className={`h-2 w-2 rounded-full ${healthCheck.data ? "bg-green-500" : "bg-red-500"}`}
+		<div className="max-w-6xl mx-auto container">
+			<div className="grid gap-8 p-4 sm:p-8 md:p-24">
+				<h1 className="font-bold text-8xl leading-32">
+					Quit "
+					<span className="group relative inline-block">
+						<TooltipAbbr
+							abbr="babbling"
+							definition="verb. to speak without clarity, like an infant e.g. gaga guga"
 						/>
-						<span className="text-sm text-muted-foreground">
-							{healthCheck.isLoading
-								? "Checking..."
-								: healthCheck.data
-									? "Connected"
-									: "Disconnected"}
-						</span>
-					</div>
-				</section>
+					</span>
+					" in English with{" "}
+					<TooltipAbbr
+						abbr="GUGA"
+						definition="abbr. Gzowski unnamed glossary app"
+					/>
+				</h1>
+				<h2 className="text-4xl leading-16">
+					Transform your vocabulary with GUGA - app that makes remembering words
+					effortless!
+				</h2>
 			</div>
 		</div>
 	);

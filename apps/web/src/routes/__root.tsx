@@ -26,6 +26,7 @@ export interface RouterAppContext {
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
 	component: RootComponent,
+	notFoundComponent: NotFoundComponent,
 	head: () => ({
 		meta: [
 			{
@@ -45,6 +46,18 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 	}),
 });
 
+function NotFoundComponent() {
+	return (
+		<div className="max-w-6xl mx-auto container p-4">
+			<div className="grid gap-6 p-4 sm:p-8 md:p-24">
+				<h1 className="text-4xl font-bold">404 - Page Not Found</h1>
+				<p className="text-lg">
+					Sorry, the page you're looking for doesn't exist.
+				</p>
+			</div>
+		</div>
+	);
+}
 function RootComponent() {
 	const isFetching = useRouterState({
 		select: (s) => s.isLoading,
@@ -62,7 +75,7 @@ function RootComponent() {
 				disableTransitionOnChange
 				storageKey="vite-ui-theme"
 			>
-				<div className="grid grid-rows-[auto_1fr] h-svh">
+				<div className="grid grid-rows-[auto_1fr] min-h-svh">
 					<Header />
 					{isFetching ? <Loader /> : <Outlet />}
 					<Footer />
