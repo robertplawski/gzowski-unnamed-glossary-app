@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ModeToggle } from "./mode-toggle";
 import UserMenu from "./user-menu";
 import { useScrollPosition } from "./hooks/useScrollPosition"; // adjust path as needed
+import GUGAIcon from "../../public/union-jack.svg";
 import {
 	LucideBookA,
 	LucideCalendar,
@@ -40,7 +41,8 @@ export default function Header() {
 		>
 			<div className="max-w-6xl w-full flex flex-row items-center justify-between">
 				<div className="flex flex-row gap-8 items-center flex-1">
-					<Link to={"/"}>
+					<Link className="flex flex-row gap-4" to={"/"}>
+						<img width={40} src={GUGAIcon} alt="GUGA logo, union jack" />
 						<p className="font-bold text-xl">GUGA</p>
 					</Link>
 					<nav className="flex gap-2 md:gap-4 items-center justify-center flex-1  ">

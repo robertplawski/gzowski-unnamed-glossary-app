@@ -11,7 +11,7 @@ interface TooltipAbbrProps {
 
 const TooltipAbbr = ({ abbr, definition }: TooltipAbbrProps) => {
 	return (
-		<span className="group relative inline-block">
+		<span className="group text-primary relative inline-block">
 			<abbr className="border-b-8 border-dotted border-white no-underline cursor-help">
 				{abbr}
 			</abbr>
