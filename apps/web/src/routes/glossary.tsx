@@ -99,7 +99,7 @@ function RouteComponent() {
 							))}
 						</div>
 						{searchTerm && (
-							<p className="text-sm pt-6 text-gray-500 mb-4">
+							<p className="text-sm text-gray-500 mb-4">
 								Found {filteredEntries.length} result(s)
 							</p>
 						)}

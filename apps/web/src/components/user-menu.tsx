@@ -11,7 +11,12 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { Link } from "@tanstack/react-router";
-import { LucideUser } from "lucide-react";
+import {
+	LucideShield,
+	LucideUser,
+	LucideKey,
+	LucideMessageCircleQuestion,
+} from "lucide-react";
 
 export default function UserMenu() {
 	const navigate = useNavigate();
@@ -33,7 +38,15 @@ export default function UserMenu() {
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<Button variant="outline">
-					<LucideUser />
+					{session.user.role === "user" ? (
+						<LucideUser />
+					) : session.user.role === "moderator" ? (
+						<LucideShield />
+					) : session.user.role === "admin" ? (
+						<LucideKey />
+					) : (
+						<LucideMessageCircleQuestion />
+					)}
 					<p className="hidden md:block">{session.user.name}</p>
 				</Button>
 			</DropdownMenuTrigger>

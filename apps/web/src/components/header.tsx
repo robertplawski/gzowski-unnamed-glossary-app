@@ -4,6 +4,7 @@ import UserMenu from "./user-menu";
 import { useScrollPosition } from "./hooks/useScrollPosition"; // adjust path as needed
 import GUGAIcon from "../../public/union-jack.svg";
 import {
+	LayoutDashboard,
 	LucideBookA,
 	LucideCalendar,
 	LucideClover,
@@ -33,6 +34,11 @@ export default function Header() {
 			label: "Leaderboard",
 			icon: LucideTrophy,
 		},
+		{
+			to: "/dashboard",
+			label: "Dashboard",
+			icon: LayoutDashboard,
+		},
 	] as const;
 
 	return (
@@ -54,7 +60,7 @@ export default function Header() {
 									className="flex p-2 flex-row cursor-pointer gap-2 items-center"
 								>
 									<Icon size={20} />
-									<p className="hidden md:block">{label}</p>
+									<p className="hidden lg:block">{label}</p>
 								</Link>
 							);
 						})}
