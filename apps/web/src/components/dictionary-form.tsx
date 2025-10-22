@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,7 +19,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit3 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/utils/orpc";
 
@@ -28,19 +28,29 @@ export default function DictionaryAdminForm() {
 	const [activeTab, setActiveTab] = useState("dictionary");
 	const [message, setMessage] = useState({ type: "", text: "" });
 
-	// Fetch dictionaries for the entry form
-	const { data: dictionaries = [] } = useQuery(
-		orpc.dictionary.getAll.queryOptions(),
+	// Fetch dictionaries for the entry form - Get the query options object
+	const dictionaryQueryOptions = orpc.dictionary.getAll.queryOptions();
+	const { data: dictionaries = [], isLoading: dictionariesLoading } = useQuery(
+		dictionaryQueryOptions, // Use the options object directly
+	);
+
+	// Fetch entries for the edit entries tab - Get the query options object
+	const entryQueryOptions = orpc.entry.getAll.queryOptions();
+	const { data: entries = [], isLoading: entriesLoading } = useQuery(
+		entryQueryOptions, // Use the options object directly
 	);
 
 	// Dictionary form state
 	const [dictionaryForm, setDictionaryForm] = useState({
+		id: "",
 		name: "",
 		description: "",
 	});
+	const [isEditingDictionary, setIsEditingDictionary] = useState(false);
 
 	// Entry form state
 	const [entryForm, setEntryForm] = useState({
+		id: "",
 		dictionaryId: "",
 		word: "",
 		translation: "",
@@ -49,14 +59,18 @@ export default function DictionaryAdminForm() {
 		example: "",
 		notes: "",
 	});
+	const [isEditingEntry, setIsEditingEntry] = useState(false);
 
 	// Dictionary mutations
 	const createDictionary = useMutation({
 		...orpc.dictionary.create.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["dictionaries"] });
+			// Invalidate using the exact query key from the query options
+			queryClient.invalidateQueries({
+				queryKey: dictionaryQueryOptions.queryKey,
+			});
 			setMessage({ type: "success", text: "Dictionary created successfully!" });
-			setDictionaryForm({ name: "", description: "" });
+			setDictionaryForm({ id: "", name: "", description: "" });
 		},
 		onError: (error: any) => {
 			setMessage({
@@ -66,13 +80,51 @@ export default function DictionaryAdminForm() {
 		},
 	});
 
+	const updateDictionary = useMutation({
+		...orpc.dictionary.update.mutationOptions(),
+		onSuccess: () => {
+			// Invalidate using the exact query key from the query options
+			queryClient.invalidateQueries({
+				queryKey: dictionaryQueryOptions.queryKey,
+			});
+			setMessage({ type: "success", text: "Dictionary updated successfully!" });
+			setDictionaryForm({ id: "", name: "", description: "" });
+			setIsEditingDictionary(false);
+		},
+		onError: (error: any) => {
+			setMessage({
+				type: "error",
+				text: error.message || "Failed to update dictionary",
+			});
+		},
+	});
+
+	const deleteDictionary = useMutation({
+		...orpc.dictionary.delete.mutationOptions(),
+		onSuccess: () => {
+			// Invalidate using the exact query key from the query options
+			queryClient.invalidateQueries({
+				queryKey: dictionaryQueryOptions.queryKey,
+			});
+			setMessage({ type: "success", text: "Dictionary deleted successfully!" });
+		},
+		onError: (error: any) => {
+			setMessage({
+				type: "error",
+				text: error.message || "Failed to delete dictionary",
+			});
+		},
+	});
+
 	// Entry mutations
 	const createEntry = useMutation({
 		...orpc.entry.create.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["entries"] });
+			// Invalidate using the exact query key from the query options
+			queryClient.invalidateQueries({ queryKey: entryQueryOptions.queryKey });
 			setMessage({ type: "success", text: "Entry created successfully!" });
 			setEntryForm({
+				id: "",
 				dictionaryId: entryForm.dictionaryId,
 				word: "",
 				translation: "",
@@ -90,16 +142,66 @@ export default function DictionaryAdminForm() {
 		},
 	});
 
+	const updateEntry = useMutation({
+		...orpc.entry.update.mutationOptions(),
+		onSuccess: () => {
+			// Invalidate using the exact query key from the query options
+			queryClient.invalidateQueries({ queryKey: entryQueryOptions.queryKey });
+			setMessage({ type: "success", text: "Entry updated successfully!" });
+			setEntryForm({
+				id: "",
+				dictionaryId: "",
+				word: "",
+				translation: "",
+				partOfSpeech: "",
+				pronunciation: "",
+				example: "",
+				notes: "",
+			});
+			setIsEditingEntry(false);
+		},
+		onError: (error: any) => {
+			setMessage({
+				type: "error",
+				text: error.message || "Failed to update entry",
+			});
+		},
+	});
+
+	const deleteEntry = useMutation({
+		...orpc.entry.delete.mutationOptions(),
+		onSuccess: () => {
+			// Invalidate using the exact query key from the query options
+			queryClient.invalidateQueries({ queryKey: entryQueryOptions.queryKey });
+			setMessage({ type: "success", text: "Entry deleted successfully!" });
+		},
+		onError: (error: any) => {
+			setMessage({
+				type: "error",
+				text: error.message || "Failed to delete entry",
+			});
+		},
+	});
+
 	const handleDictionarySubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!dictionaryForm.name.trim()) {
 			setMessage({ type: "error", text: "Dictionary name is required" });
 			return;
 		}
-		createDictionary.mutate({
-			name: dictionaryForm.name,
-			description: dictionaryForm.description || undefined,
-		});
+
+		if (isEditingDictionary && dictionaryForm.id) {
+			updateDictionary.mutate({
+				id: dictionaryForm.id,
+				name: dictionaryForm.name,
+				description: dictionaryForm.description || undefined,
+			});
+		} else {
+			createDictionary.mutate({
+				name: dictionaryForm.name,
+				description: dictionaryForm.description || undefined,
+			});
+		}
 	};
 
 	const handleEntrySubmit = (e: React.FormEvent) => {
@@ -112,15 +214,89 @@ export default function DictionaryAdminForm() {
 			setMessage({ type: "error", text: "Word is required" });
 			return;
 		}
-		createEntry.mutate({
-			dictionaryId: entryForm.dictionaryId,
-			word: entryForm.word,
-			translation: entryForm.translation || undefined,
-			partOfSpeech: entryForm.partOfSpeech || undefined,
-			pronunciation: entryForm.pronunciation || undefined,
-			example: entryForm.example || undefined,
-			notes: entryForm.notes || undefined,
+
+		if (isEditingEntry && entryForm.id) {
+			updateEntry.mutate({
+				id: entryForm.id,
+				dictionaryId: entryForm.dictionaryId,
+				word: entryForm.word,
+				translation: entryForm.translation || undefined,
+				partOfSpeech: entryForm.partOfSpeech || undefined,
+				pronunciation: entryForm.pronunciation || undefined,
+				example: entryForm.example || undefined,
+				notes: entryForm.notes || undefined,
+			});
+		} else {
+			createEntry.mutate({
+				dictionaryId: entryForm.dictionaryId,
+				word: entryForm.word,
+				translation: entryForm.translation || undefined,
+				partOfSpeech: entryForm.partOfSpeech || undefined,
+				pronunciation: entryForm.pronunciation || undefined,
+				example: entryForm.example || undefined,
+				notes: entryForm.notes || undefined,
+			});
+		}
+	};
+
+	const handleEditDictionary = (dict: any) => {
+		setDictionaryForm({
+			id: dict.id,
+			name: dict.name,
+			description: dict.description || "",
 		});
+		setIsEditingDictionary(true);
+		setActiveTab("dictionary");
+	};
+
+	const handleDeleteDictionary = (id: string) => {
+		if (
+			window.confirm(
+				"Are you sure you want to delete this dictionary? This will also delete all entries in this dictionary.",
+			)
+		) {
+			deleteDictionary.mutate({ id });
+		}
+	};
+
+	const handleEditEntry = (entry: any) => {
+		setEntryForm({
+			id: entry.id,
+			dictionaryId: entry.dictionaryId,
+			word: entry.word,
+			translation: entry.translation || "",
+			partOfSpeech: entry.partOfSpeech || "",
+			pronunciation: entry.pronunciation || "",
+			example: entry.example || "",
+			notes: entry.notes || "",
+		});
+		setIsEditingEntry(true);
+		setActiveTab("entry");
+	};
+
+	const handleDeleteEntry = (id: string) => {
+		if (window.confirm("Are you sure you want to delete this entry?")) {
+			deleteEntry.mutate({ id });
+		}
+	};
+
+	const resetDictionaryForm = () => {
+		setDictionaryForm({ id: "", name: "", description: "" });
+		setIsEditingDictionary(false);
+	};
+
+	const resetEntryForm = () => {
+		setEntryForm({
+			id: "",
+			dictionaryId: "",
+			word: "",
+			translation: "",
+			partOfSpeech: "",
+			pronunciation: "",
+			example: "",
+			notes: "",
+		});
+		setIsEditingEntry(false);
 	};
 
 	return (
@@ -147,17 +323,27 @@ export default function DictionaryAdminForm() {
 			)}
 
 			<Tabs value={activeTab} onValueChange={setActiveTab}>
-				<TabsList className="grid w-full grid-cols-2 mb-6">
-					<TabsTrigger value="dictionary">Create Dictionary</TabsTrigger>
-					<TabsTrigger value="entry">Add Entry/Word</TabsTrigger>
+				<TabsList className="grid w-full grid-cols-4 mb-6">
+					<TabsTrigger value="dictionary">Dictionaries</TabsTrigger>
+					<TabsTrigger value="manage-dictionaries">
+						Manage Dictionaries
+					</TabsTrigger>
+					<TabsTrigger value="entry">Entries</TabsTrigger>
+					<TabsTrigger value="edit-entries">Manage Entries</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="dictionary">
 					<Card>
 						<CardHeader>
-							<CardTitle>Create New Dictionary</CardTitle>
+							<CardTitle>
+								{isEditingDictionary
+									? "Update Dictionary"
+									: "Create New Dictionary"}
+							</CardTitle>
 							<CardDescription>
-								Add a new dictionary to organize your entries
+								{isEditingDictionary
+									? "Update existing dictionary metadata"
+									: "Add a new dictionary to organize your entries"}
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -194,24 +380,105 @@ export default function DictionaryAdminForm() {
 									/>
 								</div>
 
-								<Button
-									type="submit"
-									disabled={createDictionary.isPending}
-									className="w-full"
-								>
-									{createDictionary.isPending ? (
-										<>
-											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-											Creating...
-										</>
-									) : (
-										<>
-											<Plus className="mr-2 h-4 w-4" />
-											Create Dictionary
-										</>
+								<div className="flex gap-2">
+									<Button
+										type="submit"
+										disabled={
+											createDictionary.isPending || updateDictionary.isPending
+										}
+										className="flex-1"
+									>
+										{createDictionary.isPending ||
+										updateDictionary.isPending ? (
+											<>
+												<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+												{isEditingDictionary ? "Updating..." : "Creating..."}
+											</>
+										) : (
+											<>
+												<Plus className="mr-2 h-4 w-4" />
+												{isEditingDictionary
+													? "Update Dictionary"
+													: "Create Dictionary"}
+											</>
+										)}
+									</Button>
+
+									{isEditingDictionary && (
+										<Button
+											type="button"
+											variant="outline"
+											onClick={resetDictionaryForm}
+											disabled={
+												createDictionary.isPending || updateDictionary.isPending
+											}
+											className="flex-1"
+										>
+											Cancel
+										</Button>
 									)}
-								</Button>
+								</div>
 							</form>
+						</CardContent>
+					</Card>
+				</TabsContent>
+
+				<TabsContent value="manage-dictionaries">
+					<Card>
+						<CardHeader>
+							<CardTitle>Manage Dictionaries</CardTitle>
+							<CardDescription>
+								View, edit, and delete existing dictionaries
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{dictionariesLoading ? (
+								<div className="flex justify-center py-8">
+									<Loader2 className="h-8 w-8 animate-spin" />
+								</div>
+							) : dictionaries.length === 0 ? (
+								<p className="text-center text-gray-500 py-4">
+									No dictionaries found
+								</p>
+							) : (
+								<div className="space-y-4">
+									{dictionaries.map((dict: any) => (
+										<div
+											key={dict.id}
+											className="border rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
+										>
+											<div>
+												<h3 className="font-semibold">{dict.name}</h3>
+												{dict.description && (
+													<p className="text-sm text-gray-600 mt-1">
+														{dict.description}
+													</p>
+												)}
+												<p className="text-sm text-gray-500">
+													{dict.entryCount || 0} entries
+												</p>
+											</div>
+											<div className="flex gap-2">
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => handleEditDictionary(dict)}
+												>
+													<Edit3 className="h-4 w-4 mr-2" />
+													Edit
+												</Button>
+												<Button
+													variant="destructive"
+													size="sm"
+													onClick={() => handleDeleteDictionary(dict.id)}
+												>
+													<Trash2 className="h-4 w-4" />
+												</Button>
+											</div>
+										</div>
+									))}
+								</div>
+							)}
 						</CardContent>
 					</Card>
 				</TabsContent>
@@ -219,9 +486,13 @@ export default function DictionaryAdminForm() {
 				<TabsContent value="entry">
 					<Card>
 						<CardHeader>
-							<CardTitle>Add New Entry/Word</CardTitle>
+							<CardTitle>
+								{isEditingEntry ? "Update Entry" : "Add New Entry/Word"}
+							</CardTitle>
 							<CardDescription>
-								Add a new word or entry to your dictionary
+								{isEditingEntry
+									? "Update existing entry details"
+									: "Add a new word or entry to your dictionary"}
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -335,24 +606,104 @@ export default function DictionaryAdminForm() {
 									/>
 								</div>
 
-								<Button
-									type="submit"
-									disabled={createEntry.isPending}
-									className="w-full"
-								>
-									{createEntry.isPending ? (
-										<>
-											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-											Adding...
-										</>
-									) : (
-										<>
-											<Plus className="mr-2 h-4 w-4" />
-											Add Entry
-										</>
+								<div className="flex gap-2">
+									<Button
+										type="submit"
+										disabled={createEntry.isPending || updateEntry.isPending}
+										className="flex-1"
+									>
+										{createEntry.isPending || updateEntry.isPending ? (
+											<>
+												<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+												{isEditingEntry ? "Updating..." : "Adding..."}
+											</>
+										) : (
+											<>
+												<Plus className="mr-2 h-4 w-4" />
+												{isEditingEntry ? "Update Entry" : "Add Entry"}
+											</>
+										)}
+									</Button>
+
+									{isEditingEntry && (
+										<Button
+											type="button"
+											variant="outline"
+											onClick={resetEntryForm}
+											disabled={createEntry.isPending || updateEntry.isPending}
+											className="flex-1"
+										>
+											Cancel
+										</Button>
 									)}
-								</Button>
+								</div>
 							</form>
+						</CardContent>
+					</Card>
+				</TabsContent>
+
+				<TabsContent value="edit-entries">
+					<Card>
+						<CardHeader>
+							<CardTitle>Manage Entries</CardTitle>
+							<CardDescription>
+								View, edit, and delete existing entries
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{entriesLoading ? (
+								<div className="flex justify-center py-8">
+									<Loader2 className="h-8 w-8 animate-spin" />
+								</div>
+							) : entries.length === 0 ? (
+								<p className="text-center text-gray-500 py-4">
+									No entries found
+								</p>
+							) : (
+								<div className="space-y-4">
+									{entries.map((entry: any) => {
+										const dictionary = dictionaries.find(
+											(d: any) => d.id === entry.dictionaryId,
+										);
+										return (
+											<div
+												key={entry.id}
+												className="border rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
+											>
+												<div>
+													<h3 className="font-semibold">{entry.word}</h3>
+													<p className="text-sm text-gray-600">
+														{dictionary?.name || "Unknown Dictionary"} •{" "}
+														{entry.partOfSpeech || "N/A"}
+													</p>
+													{entry.translation && (
+														<p className="text-sm">
+															Translation: {entry.translation}
+														</p>
+													)}
+												</div>
+												<div className="flex gap-2">
+													<Button
+														variant="outline"
+														size="sm"
+														onClick={() => handleEditEntry(entry)}
+													>
+														<Edit3 className="h-4 w-4 mr-2" />
+														Edit
+													</Button>
+													<Button
+														variant="destructive"
+														size="sm"
+														onClick={() => handleDeleteEntry(entry.id)}
+													>
+														<Trash2 className="h-4 w-4" />
+													</Button>
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							)}
 						</CardContent>
 					</Card>
 				</TabsContent>
