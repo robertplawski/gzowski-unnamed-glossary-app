@@ -1,4 +1,6 @@
 import { expo } from "@better-auth/expo";
+import { ac, admin, user, moderator } from "./lib/permissions";
+import { admin as adminPlugin } from "better-auth/plugins";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
@@ -42,6 +44,14 @@ export const auth = betterAuth({
 		// },
 	},
 	plugins: [
+		adminPlugin({
+			ac,
+			roles: {
+				admin,
+				user,
+				moderator,
+			},
+		}),
 		openAPI(),
 		/*polar({
 			client: polarClient,
