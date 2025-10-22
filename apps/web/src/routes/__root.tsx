@@ -17,6 +17,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import "../index.css";
+import Footer from "@/components/footer";
 
 export interface RouterAppContext {
 	orpc: typeof orpc;
@@ -64,6 +65,7 @@ function RootComponent() {
 				<div className="grid grid-rows-[auto_1fr] h-svh">
 					<Header />
 					{isFetching ? <Loader /> : <Outlet />}
+					<Footer />
 				</div>
 				<Toaster richColors />
 			</ThemeProvider>
