@@ -300,12 +300,10 @@ export default function DictionaryAdminForm() {
 	};
 
 	return (
-		<div className="container mx-auto p-6 max-w-4xl">
-			<div className="mb-6">
-				<h1 className="text-3xl font-bold mb-2">Dictionary Administration</h1>
-				<p className="text-gray-600">
-					Create and manage dictionaries and entries
-				</p>
+		<div className="container p-6 sm:p-12 mx-auto max-w-6xl">
+			<div className="flex flex-col gap-4 mb-6">
+				<h1 className="text-3xl font-bold">Dictionary Administration</h1>
+				<p>Create and manage dictionaries and entries</p>
 			</div>
 
 			{message.text && (

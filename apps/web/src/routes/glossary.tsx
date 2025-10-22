@@ -41,7 +41,7 @@ function RouteComponent() {
 
 	if (error) {
 		return (
-			<div className="max-w-6xl mx-auto container p-8">
+			<div className="max-w-6xl mx-auto container p-6">
 				Error loading entries: {error.message}
 			</div>
 		);
@@ -49,12 +49,13 @@ function RouteComponent() {
 
 	return (
 		<div className="max-w-6xl mx-auto container">
-			<div className="grid gap-8 p-8 sm:p-12">
-				<h1 className="font-bold text-2xl sm:text-3xl md:text-4xl leading-8 sm:leading-10 md:leading-16">
-					Search words...
-				</h1>
+			<div className="grid gap-6 p-6 sm:p-12">
+				<div className="flex flex-col gap-4">
+					<h1 className="font-bold text-3xl ">Search words...</h1>
+					<p>Enter you query in the field above.</p>
+				</div>
+
 				<Input
-					className="text-3xl"
 					placeholder="Type to search..."
 					value={searchTerm}
 					onChange={(e) => setSearchTerm(e.target.value)}
