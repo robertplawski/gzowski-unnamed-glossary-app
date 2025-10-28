@@ -9,6 +9,68 @@ export const Route = createFileRoute("/glossary")({
 	component: RouteComponent,
 });
 
+function EntryCard({ entry }: { entry: any }) {
+	const [toggled, setToggled] = useState(false);
+	const [dictionaryData, setDictionaryData] = useState({});
+	useEffect(() => {
+		if (!toggled) {
+			setDictionaryData({});
+		} else {
+			async function fetchData() {
+				const request = await fetch(
+					`https://api.dictionaryapi.dev/api/v2/entries/en/${entry.word}`,
+					{ cache: "force-cache" },
+				);
+
+				const data = await request.json();
+				setDictionaryData(data);
+			}
+			fetchData();
+		}
+	}, [toggled, setDictionaryData]);
+	return (
+		<Card onClick={() => setToggled(true)} key={entry.id}>
+			<CardHeader>
+				<CardTitle>{entry.word}</CardTitle>
+			</CardHeader>
+			<CardContent className="grid gap-2">
+				{entry.translation && (
+					<div>
+						<h3 className="font-semibold">Translation:</h3>
+						<p>{entry.translation}</p>
+					</div>
+				)}
+
+				{JSON.stringify(dictionaryData)}
+				{entry.pronunciation && (
+					<div>
+						<h3 className="font-semibold">Pronunciation:</h3>
+						<p>/{entry.pronunciation}/ </p>
+					</div>
+				)}
+				{entry.partOfSpeech && (
+					<div>
+						<h3 className="font-semibold">Part of Speech:</h3>
+						<p>{entry.partOfSpeech}</p>
+					</div>
+				)}
+				{entry.example && (
+					<div>
+						<h3 className="font-semibold">Example:</h3>
+						<p>{entry.example}</p>
+					</div>
+				)}
+				{entry.notes && (
+					<div>
+						<h3 className="font-semibold">Notes:</h3>
+						<p>{entry.notes}</p>
+					</div>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
 function RouteComponent() {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [filteredEntries, setFilteredEntries] = useState<any[]>([]); // Consider defining a proper type
@@ -66,43 +128,7 @@ function RouteComponent() {
 					<div>
 						<div className="grid gap-4">
 							{filteredEntries.map((entry) => (
-								<Card key={entry.id}>
-									<CardHeader>
-										<CardTitle>{entry.word}</CardTitle>
-									</CardHeader>
-									<CardContent className="grid gap-2">
-										{entry.translation && (
-											<div>
-												<h3 className="font-semibold">Translation:</h3>
-												<p>{entry.translation}</p>
-											</div>
-										)}
-										{entry.pronunciation && (
-											<div>
-												<h3 className="font-semibold">Pronunciation:</h3>
-												<p>/{entry.pronunciation}/ </p>
-											</div>
-										)}
-										{entry.partOfSpeech && (
-											<div>
-												<h3 className="font-semibold">Part of Speech:</h3>
-												<p>{entry.partOfSpeech}</p>
-											</div>
-										)}
-										{entry.example && (
-											<div>
-												<h3 className="font-semibold">Example:</h3>
-												<p>{entry.example}</p>
-											</div>
-										)}
-										{entry.notes && (
-											<div>
-												<h3 className="font-semibold">Notes:</h3>
-												<p>{entry.notes}</p>
-											</div>
-										)}
-									</CardContent>
-								</Card>
+								<EntryCard key={entry.word} entry={entry} />
 							))}
 						</div>
 						{searchTerm && (
