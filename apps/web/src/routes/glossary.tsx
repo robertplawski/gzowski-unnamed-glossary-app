@@ -77,6 +77,12 @@ function RouteComponent() {
 												<p>{entry.translation}</p>
 											</div>
 										)}
+										{entry.pronunciation && (
+											<div>
+												<h3 className="font-semibold">Pronunciation:</h3>
+												<p>/{entry.pronunciation}/ </p>
+											</div>
+										)}
 										{entry.partOfSpeech && (
 											<div>
 												<h3 className="font-semibold">Part of Speech:</h3>
