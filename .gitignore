@@ -1,3 +1,10 @@
+# big assets
+assets 
+
+# python
+.venv
+__pycache__
+
 # Dependencies
 node_modules
 .pnp
