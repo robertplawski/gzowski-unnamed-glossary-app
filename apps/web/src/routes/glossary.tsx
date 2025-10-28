@@ -9,6 +9,53 @@ export const Route = createFileRoute("/glossary")({
 	component: RouteComponent,
 });
 
+<<<<<<< Updated upstream
+=======
+function EntryCard({ entry }: { entry: any }) {
+	return (
+		<Card key={entry.id}>
+			<CardHeader>
+				<CardTitle>{entry.word}</CardTitle>
+			</CardHeader>
+			<CardContent className="grid gap-2">
+				{entry.translation && (
+					<div>
+						<h3 className="font-semibold">Translation:</h3>
+						<p>{entry.translation}</p>
+					</div>
+				)}
+
+				{JSON.stringify(entry.dictionaryData)}
+				{entry.pronunciation && (
+					<div>
+						<h3 className="font-semibold">Pronunciation:</h3>
+						<p>/{entry.pronunciation}/ </p>
+					</div>
+				)}
+				{entry.partOfSpeech && (
+					<div>
+						<h3 className="font-semibold">Part of Speech:</h3>
+						<p>{entry.partOfSpeech}</p>
+					</div>
+				)}
+				{entry.example && (
+					<div>
+						<h3 className="font-semibold">Example:</h3>
+						<p>{entry.example}</p>
+					</div>
+				)}
+				{entry.notes && (
+					<div>
+						<h3 className="font-semibold">Notes:</h3>
+						<p>{entry.notes}</p>
+					</div>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+>>>>>>> Stashed changes
 function RouteComponent() {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [filteredEntries, setFilteredEntries] = useState<any[]>([]); // Consider defining a proper type

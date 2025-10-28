@@ -2,11 +2,11 @@ import { publicProcedure, protectedProcedure } from "../index";
 import { eq, and } from "drizzle-orm";
 import { ORPCError, type RouterClient } from "@orpc/server";
 import { db } from "@gzowski-unnamed-glossary-app/db";
+import { env } from "cloudflare:workers";
+
 import {
 	dictionary,
 	entry,
-	tag,
-	entryTag,
 	comment,
 	entryVote,
 	commentVote,
@@ -58,30 +58,6 @@ const entryIdSchema = z.object({
 
 const entryByDictionarySchema = z.object({
 	dictionaryId: z.string().uuid(),
-});
-
-// ===== Tag Schemas =====
-const tagCreateSchema = z.object({
-	name: z.string().min(1),
-});
-
-const tagIdSchema = z.object({
-	id: z.string().uuid(),
-});
-
-// ===== Entry Tag Schemas =====
-const entryTagCreateSchema = z.object({
-	entryId: z.string().uuid(),
-	tagId: z.string().uuid(),
-});
-
-const entryTagDeleteSchema = z.object({
-	entryId: z.string().uuid(),
-	tagId: z.string().uuid(),
-});
-
-const tagsByEntrySchema = z.object({
-	entryId: z.string().uuid(),
 });
 
 // ===== Comment Schemas =====
@@ -165,6 +141,10 @@ const importJsonSchema = z.object({
 });
 
 type ImportJson = z.infer<typeof importJsonSchema>;
+
+const remoteEntryInput = z.object({
+	word: z.string(),
+});
 
 // Function to parse the import JSON and extract vocabulary entries
 function parseImportJson(json: unknown): ImportJson {
@@ -288,6 +268,26 @@ export const dictionaryRouter = {
 	// ===== Entry Routes =====
 	// Public endpoints for reading entries
 	entry: {
+		getRemoteEntry: publicProcedure
+			.input(remoteEntryInput)
+			.handler(async ({ input: { word }, context }) => {
+				const kvData = await context.env.WORD_CACHE.get(word);
+
+				if (kvData) {
+					return kvData;
+				}
+
+				const request = await fetch(
+					`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`,
+				);
+				const dictionaryData = await request.json();
+
+				const preparedData = JSON.stringify(dictionaryData[0]);
+
+				await context.env.WORD_CACHE.put(word, preparedData);
+				return preparedData;
+			}),
+
 		getAll: publicProcedure.handler(async () => {
 			return db.select().from(entry).all();
 		}),
@@ -517,125 +517,6 @@ export const dictionaryRouter = {
 				return { success: true };
 			}),
 	},
-
-	/*// ===== Tag Routes =====
-	tag: {
-		getAll: publicProcedure.handler(async () => {
-			return db.select().from(tag).all();
-		}),
-
-		getById: publicProcedure
-			.input(tagIdSchema)
-			.handler(async ({ input: { id } }) => {
-				return db.select().from(tag).where(eq(tag.id, id)).get();
-			}),
-
-		// Authenticated users can create tags
-		create: protectedProcedure
-			.input(tagCreateSchema)
-			.handler(async ({ input: { name }, context }) => {
-				// Check if user has permission to create tags
-				const { success: hasPermission } = await auth.api.userHasPermission({
-					body: {
-						userId: context.session.user.id,
-						permission: { tag: ["create"] },
-					},
-				});
-
-				if (!hasPermission) {
-					throw new ORPCError("FORBIDDEN");
-				}
-
-				const id = randomUUID();
-				const timestamp = new Date();
-				await db.insert(tag).values({
-					id,
-					name,
-					createdAt: timestamp,
-					updatedAt: timestamp,
-				});
-				return { success: true, id };
-			}),
-
-		// Admin/moderator can delete tags
-		delete: protectedProcedure
-			.input(tagIdSchema)
-			.handler(async ({ input: { id }, context }) => {
-				// Check if user has permission to delete tags
-				const { success: hasPermission } = await auth.api.userHasPermission({
-					body: {
-						userId: context.session.user.id,
-						permission: { tag: ["delete"] },
-					},
-				});
-
-				if (!hasPermission) {
-					throw new ORPCError("FORBIDDEN");
-				}
-
-				await db.delete(tag).where(eq(tag.id, id));
-				return { success: true };
-			}),
-	},
-
-	// ===== Entry Tag Routes =====
-	entryTag: {
-		getByEntry: publicProcedure
-			.input(tagsByEntrySchema)
-			.handler(async ({ input: { entryId } }) => {
-				return db
-					.select()
-					.from(entryTag)
-					.innerJoin(tag, eq(entryTag.tagId, tag.id))
-					.where(eq(entryTag.entryId, entryId))
-					.all();
-			}),
-
-		// Authenticated users can tag entries
-		create: protectedProcedure
-			.input(entryTagCreateSchema)
-			.handler(async ({ input: { entryId, tagId }, context }) => {
-				// Check if user has permission to create entry tags
-				const { success: hasPermission } = await auth.api.userHasPermission({
-					body: {
-						userId: context.session.user.id,
-						permission: { entryTag: ["create"] },
-					},
-				});
-
-				if (!hasPermission) {
-					throw new ORPCError("FORBIDDEN");
-				}
-
-				await db.insert(entryTag).values({
-					entryId,
-					tagId,
-				});
-				return { success: true };
-			}),
-
-		// Admin/moderator can remove tags from entries
-		delete: protectedProcedure
-			.input(entryTagDeleteSchema)
-			.handler(async ({ input: { entryId, tagId }, context }) => {
-				// Check if user has permission to delete entry tags
-				const { success: hasPermission } = await auth.api.userHasPermission({
-					body: {
-						userId: context.session.user.id,
-						permission: { entryTag: ["delete"] },
-					},
-				});
-
-				if (!hasPermission) {
-					throw new ORPCError("FORBIDDEN");
-				}
-
-				await db
-					.delete(entryTag)
-					.where(and(eq(entryTag.entryId, entryId), eq(entryTag.tagId, tagId)));
-				return { success: true };
-			}),
-	},*/
 
 	// ===== Comment Routes =====
 	comment: {

@@ -28,5 +28,11 @@
 			"preview_database_id": "local-guga",
 			"migrations_dir": "../../packages/db/src/migrations"
 		}
-	]
+	],
+  "kv_namespaces": [
+    {
+      "binding": "WORD_CACHE",
+      "id": "e905512efc904026879e72fe3c86c6da"
+    }
+  ]
 }
