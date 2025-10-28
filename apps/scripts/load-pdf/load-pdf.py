@@ -256,20 +256,22 @@ def split(
 def extract_vocabulary_with_regex(content: str) -> List[Tuple[str, str]]:
     """
     Extract vocabulary words and pronunciations using your regex pattern.
-    Returns list of (word, pronunciation) tuples.
+    Handles multi-line pronunciations properly.
     """
+    # Pattern that captures word followed by pronunciation in slashes
+    # Uses re.MULTILINE flag and more precise boundaries
+    pattern = r"^([a-zA-Z][^\/\n]*?)\s+/([^\/]+?)/\s*$"
 
-    pattern = r"([^\/\n]*)(\/(?:[^\/]*)\/)"
-
-    matches = re.findall(pattern, content)
     vocabulary = []
 
+    matches = re.findall(pattern, content, re.MULTILINE)
     for word, pronunciation in matches:
-        # Clean up the results
         word = word.strip()
-        pronunciation = pronunciation.strip("/")  # Remove the surrounding slashes
+        pronunciation = pronunciation.strip()
 
-        # Only include non-empty pairs
+        # Clean up any remaining newlines within the pronunciation
+        pronunciation = re.sub(r"\s*\n\s*", " ", pronunciation)
+
         if word and pronunciation:
             vocabulary.append((word, pronunciation))
 
