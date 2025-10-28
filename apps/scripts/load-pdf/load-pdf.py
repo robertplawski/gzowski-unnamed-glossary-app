@@ -88,8 +88,15 @@ def split(
             raise typer.Exit(1)
 
         reader = PdfReader(file_path)
-        output_dir.mkdir(exist_ok=True)
+        total_pages = len(reader.pages)
 
+        typer.echo(f"PDF has {total_pages} total pages")  # Debug info
+
+        if total_pages == 0:
+            typer.echo("Error: PDF file contains no pages", err=True)
+            raise typer.Exit(1)
+
+        output_dir.mkdir(exist_ok=True)
         base_name = file_path.stem
 
         # Parse page ranges if provided
@@ -100,17 +107,18 @@ def split(
                 raise typer.Exit(1)
 
             # Validate page numbers are within range
-            max_page = len(reader.pages)
-            invalid_pages = [p for p in page_numbers if p < 1 or p > max_page]
+            invalid_pages = [p for p in page_numbers if p < 1 or p > total_pages]
             if invalid_pages:
                 typer.echo(
-                    f"Error: Pages {invalid_pages} are out of range (1-{max_page})",
+                    f"Error: Pages {invalid_pages} are out of range (1-{total_pages})",
                     err=True,
                 )
                 raise typer.Exit(1)
+
+            typer.echo(f"Extracting pages: {page_numbers}")  # Debug info
         else:
             # If no pages specified, extract all pages
-            page_numbers = list(range(1, len(reader.pages) + 1))
+            page_numbers = list(range(1, total_pages + 1))
 
         # Extract only the specified pages
         extracted_count = 0
@@ -123,7 +131,9 @@ def split(
             text = page.extract_text()
 
             # Write text to file
-            output_file = output_dir / f"{base_name}_page_{page_num}.txt"
+            output_file = (
+                output_dir / f"{base_name}_page_{page_num:03d}.txt"
+            )  # Use 3-digit padding
             try:
                 with open(output_file, "w", encoding="utf-8") as f:
                     f.write(text)
@@ -132,7 +142,9 @@ def split(
                 typer.echo(f"Error writing {output_file}: {e}", err=True)
                 continue
 
-        typer.echo(f"Split {extracted_count} pages into text files in {output_dir}")
+        typer.echo(
+            f"Successfully extracted {extracted_count} pages into text files in {output_dir}"
+        )
 
     except Exception as e:
         typer.echo(f"Error splitting PDF: {e}", err=True)
@@ -156,43 +168,78 @@ def read_pages(
             typer.echo("Error: No valid page numbers provided", err=True)
             raise typer.Exit(1)
 
-        # Get all text files in the directory
-        text_files = sorted(
-            [f for f in input_dir.glob("*.txt") if f.is_file()],
-            key=lambda x: extract_page_number(x.stem),
-        )
+        # Get all text files in the directory and show what we found
+        text_files = list(input_dir.glob("*.txt"))
+        typer.echo(f"Found {len(text_files)} text files in directory")  # Debug info
 
-        if not text_files:
-            typer.echo(f"No text files found in '{input_dir}'", err=True)
+        # Create a mapping of page numbers to files
+        page_file_map = {}
+        for file_path in text_files:
+            page_num = extract_page_number(file_path.stem)
+            if page_num is not None:
+                page_file_map[page_num] = file_path
+                typer.echo(f"  Page {page_num}: {file_path.name}")  # Debug info
+
+        if not page_file_map:
+            typer.echo(f"No valid text files found in '{input_dir}'", err=True)
             raise typer.Exit(1)
 
         # Read and display requested pages
+        found_pages = 0
         for page_num in page_numbers:
-            if page_num < 1 or page_num > len(text_files):
-                typer.echo(
-                    f"Warning: Page {page_num} is out of range (1-{len(text_files)})",
-                    err=True,
-                )
-                continue
+            if page_num in page_file_map:
+                file_path = page_file_map[page_num]
+                typer.echo(f"\n{'=' * 50}")
+                typer.echo(f"Page {page_num}: {file_path.name}")
+                typer.echo(f"{'=' * 50}")
 
-            file_path = text_files[page_num - 1]  # Convert to 0-based index
-            typer.echo(f"\n{'=' * 50}")
-            typer.echo(f"Page {page_num}: {file_path.name}")
-            typer.echo(f"{'=' * 50}")
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+                        if content.strip():
+                            typer.echo(content)
+                        else:
+                            typer.echo("(Empty page)")
+                    found_pages += 1
+                except Exception as e:
+                    typer.echo(f"Error reading {file_path}: {e}", err=True)
+            else:
+                typer.echo(f"Warning: Page {page_num} not found in directory", err=True)
 
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-                    if content.strip():
-                        typer.echo(content)
-                    else:
-                        typer.echo("(Empty page)")
-            except Exception as e:
-                typer.echo(f"Error reading {file_path}: {e}", err=True)
+        typer.echo(
+            f"\nSuccessfully displayed {found_pages} out of {len(page_numbers)} requested pages"
+        )
 
     except Exception as e:
         typer.echo(f"Error reading pages: {e}", err=True)
         raise typer.Exit(1)
+
+
+def extract_page_number(filename: str) -> int:
+    """Extract page number from filename like 'document_page_1' or 'focus-4_page_16'."""
+    import re
+
+    # Look for patterns like _page_16, _page_1, page_16, etc.
+    patterns = [
+        r"_page_(\d+)",
+        r"page_(\d+)",
+        r"_p(\d+)",
+        r"p(\d+)",
+        r"_(\d+)\.txt$",
+        r"(\d+)\.txt$",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, filename)
+        if match:
+            return int(match.group(1))
+
+    # If no pattern matches, try to find the last number in the filename
+    numbers = re.findall(r"\d+", filename)
+    if numbers:
+        return int(numbers[-1])
+
+    return None
 
 
 def parse_page_ranges(page_str: str) -> list[int]:
