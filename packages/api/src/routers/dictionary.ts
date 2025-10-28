@@ -1,5 +1,5 @@
 import { publicProcedure, protectedProcedure } from "../index";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ilike, or, sql, like } from "drizzle-orm";
 import { ORPCError, type RouterClient } from "@orpc/server";
 import { db } from "@gzowski-unnamed-glossary-app/db";
 import { env } from "cloudflare:workers";
@@ -333,6 +333,65 @@ export const dictionaryRouter = {
 				return JSON.stringify(remoteData);
 			}),
 
+		// Add this to your existing procedures
+		search: publicProcedure
+			.input(
+				z.object({
+					query: z.string().min(1, "Search query cannot be empty"),
+					limit: z.number().min(1).max(100).optional().default(20),
+					offset: z.number().min(0).optional().default(0),
+				}),
+			)
+			.handler(async ({ input, context }) => {
+				const { query, limit, offset } = input;
+
+				// Search across multiple fields using SQLite LIKE (which is case-insensitive)
+				const entries = await db
+					.select()
+					.from(entry)
+					.where(
+						or(
+							like(entry.word, `%${query}%`),
+							like(entry.translation, `%${query}%`),
+							like(entry.example, `%${query}%`),
+							like(entry.notes, `%${query}%`),
+							like(entry.partOfSpeech, `%${query}%`),
+						),
+					)
+					.limit(limit)
+					.offset(offset)
+					.all();
+
+				const enrichedEntries = await enrichEntriesWithRemoteData(
+					entries,
+					context,
+				);
+
+				// Get total count for pagination
+				const totalResult = await db
+					.select({ count: sql<number>`count(*)` })
+					.from(entry)
+					.where(
+						or(
+							like(entry.word, `%${query}%`),
+							like(entry.translation, `%${query}%`),
+							like(entry.example, `%${query}%`),
+							like(entry.notes, `%${query}%`),
+							like(entry.partOfSpeech, `%${query}%`),
+						),
+					)
+					.get();
+
+				return {
+					entries: enrichedEntries,
+					pagination: {
+						total: totalResult?.count || 0,
+						limit,
+						offset,
+						hasMore: offset + limit < (totalResult?.count || 0),
+					},
+				};
+			}),
 		getAll: publicProcedure.handler(async ({ context }) => {
 			const entries = await db.select().from(entry).all();
 			return enrichEntriesWithRemoteData(entries, context);
