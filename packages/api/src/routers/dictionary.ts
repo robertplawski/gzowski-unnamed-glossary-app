@@ -15,6 +15,64 @@ import { auth } from "@gzowski-unnamed-glossary-app/auth";
 import { z } from "zod";
 import { randomUUID } from "crypto";
 
+const offsetPaginationSchema = z.object({
+	page: z.number().min(1).default(1),
+	limit: z.number().min(1).max(100).default(20),
+});
+
+// Helper function to get remote dictionary entry
+async function getRemoteDictionaryEntry(word: string, context: any) {
+	try {
+		// Check cache first
+		const cachedData = await context.env.WORD_CACHE.get(word);
+		if (cachedData) {
+			return JSON.parse(cachedData);
+		}
+
+		// Fetch from API if not in cache
+		const response = await fetch(
+			`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
+			{
+				headers: {
+					Accept: "application/json",
+					"Content-Type": "application/json",
+					"User-Agent": "DictionaryApp/1.0.0",
+				},
+			},
+		);
+
+		// Check if response is OK and content type is JSON
+		if (!response.ok) {
+			console.warn(`API returned ${response.status} for word: ${word}`);
+			return null;
+		}
+		const dictionaryData = await response.json();
+		const remoteData = dictionaryData[0];
+
+		// Cache for future use
+		await context.env.WORD_CACHE.put(word, JSON.stringify(remoteData));
+		return remoteData;
+	} catch (error) {
+		console.error(`Failed to fetch remote data for word: ${word}`, error);
+		return null;
+	}
+}
+
+// Helper function to enrich entries with remote data
+async function enrichEntriesWithRemoteData(entries: any[], context: any) {
+	return Promise.all(
+		entries
+			.filter((_, index) => index < 10) // MAX 10
+			.map(async (entry) => ({
+				...entry,
+				remoteDictionaryEntry: await getRemoteDictionaryEntry(
+					entry.word,
+					context,
+				),
+			})),
+	);
+}
+
 // ===== Dictionary Schemas =====
 const dictionaryCreateSchema = z.object({
 	name: z.string().min(1),
@@ -271,41 +329,45 @@ export const dictionaryRouter = {
 		getRemoteEntry: publicProcedure
 			.input(remoteEntryInput)
 			.handler(async ({ input: { word }, context }) => {
-				const kvData = await context.env.WORD_CACHE.get(word);
-
-				if (kvData) {
-					return kvData;
-				}
-
-				const request = await fetch(
-					`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`,
-				);
-				const dictionaryData = await request.json();
-
-				const preparedData = JSON.stringify(dictionaryData[0]);
-
-				await context.env.WORD_CACHE.put(word, preparedData);
-				return preparedData;
+				const remoteData = await getRemoteDictionaryEntry(word, context);
+				return JSON.stringify(remoteData);
 			}),
 
-		getAll: publicProcedure.handler(async () => {
-			return db.select().from(entry).all();
+		getAll: publicProcedure.handler(async ({ context }) => {
+			const entries = await db.select().from(entry).all();
+			return enrichEntriesWithRemoteData(entries, context);
 		}),
 
 		getById: publicProcedure
 			.input(entryIdSchema)
-			.handler(async ({ input: { id } }) => {
-				return db.select().from(entry).where(eq(entry.id, id)).get();
+			.handler(async ({ input: { id }, context }) => {
+				const dbEntry = await db
+					.select()
+					.from(entry)
+					.where(eq(entry.id, id))
+					.get();
+
+				if (!dbEntry) {
+					return null;
+				}
+
+				const enrichedEntries = await enrichEntriesWithRemoteData(
+					[dbEntry],
+					context,
+				);
+				return enrichedEntries[0];
 			}),
 
 		getByDictionary: publicProcedure
 			.input(entryByDictionarySchema)
-			.handler(async ({ input: { dictionaryId } }) => {
-				return db
+			.handler(async ({ input: { dictionaryId }, context }) => {
+				const entries = await db
 					.select()
 					.from(entry)
 					.where(eq(entry.dictionaryId, dictionaryId))
 					.all();
+
+				return enrichEntriesWithRemoteData(entries, context);
 			}),
 		importFromJson: protectedProcedure
 			.input(
