@@ -5,7 +5,7 @@ import { Link } from "@tanstack/react-router";
 export default function Footer() {
 	const healthCheck = useQuery(orpc.healthCheck.queryOptions());
 	return (
-		<footer className="fixed bottom-0 left-0 right-0 border-t bg-background p-2 text-xs">
+		<footer className="relative bottom-0 left-0 right-0 border-t bg-background p-2 text-xs">
 			<div className="container mx-auto max-w-6xl">
 				<div className="flex flex-col sm:flex-row items-center justify-between gap-2">
 					<div className="flex items-center gap-4">
@@ -22,6 +22,17 @@ export default function Footer() {
 								className="underline hover:text-foreground transition-colors"
 							>
 								eksabajt.pl
+							</a>
+						</span>
+						<span className="hidden sm:inline text-muted-foreground">•</span>
+						<span className="text-muted-foreground">
+							<a
+								href="https://github.com/robertplawski/gzowski-unnamed-glossary-app?tab=readme-ov-file"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="underline hover:text-foreground transition-colors"
+							>
+								Github
 							</a>
 						</span>
 					</div>
