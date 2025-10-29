@@ -20,8 +20,8 @@ export default function Header() {
 			icon: LucideBookA,
 		},
 		{
-			to: "/daily",
-			label: "Daily",
+			to: "/wotd",
+			label: "Wotd",
 			icon: LucideCalendar,
 		},
 		{
@@ -30,8 +30,8 @@ export default function Header() {
 			icon: LucideClover,
 		},
 		{
-			to: "/leaderboard",
-			label: "Leaderboard",
+			to: "/challenging",
+			label: "Challenging",
 			icon: LucideTrophy,
 		},
 		{
