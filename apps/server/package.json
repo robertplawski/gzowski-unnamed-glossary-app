@@ -10,6 +10,7 @@
 		"start": "wrangler dev",
 		"deploy": "wrangler deploy",
 		"apply-local": "wrangler d1 migrations apply guga --local",
+		"grant-admin-local": "wrangler d1 execute guga --local --command \"UPDATE user SET role='admin'\" ",
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings"
 	},
 	"dependencies": {
