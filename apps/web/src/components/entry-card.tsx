@@ -1,46 +1,44 @@
-function EntryCard({ entry }: { entry: any }) {
+import { DictionaryEntry } from "./dictionary-entry";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+
+export function EntryCard({ entry }: { entry: any }) {
+	if (entry.remoteDictionaryEntry) {
+		return <DictionaryEntry entry={entry} />;
+	}
 	return (
-		<Card key={entry.id}>
+		// Fallback to individual fields if no dictionary data
+		<Card key={entry.id} className="w-full">
 			<CardHeader>
-				<CardTitle>{entry.word}</CardTitle>
+				<CardTitle className="text-2xl text-foreground">{entry.word}</CardTitle>
+				<div className="flex items-center gap-4 flex-wrap">
+					<span className="text-lg text-muted-foreground font-mono">
+						/{entry.pronunciation}/{" "}
+					</span>
+				</div>
 			</CardHeader>
-			<CardContent className="grid gap-2">
-				{/* Show the formatted dictionary entry */}
-				<DictionaryEntry entry={entry} />
-
-				{/* Keep the existing fields as fallback */}
-				{entry.translation && !entry.remoteDictionaryEntry && (
+			<CardContent className="grid gap-4">
+				{entry.translation && (
 					<div>
-						<h3 className="font-semibold">Translation:</h3>
-						<p>{entry.translation}</p>
+						<h3 className="font-semibold text-foreground">Translation:</h3>
+						<p className="text-foreground">{entry.translation}</p>
 					</div>
 				)}
-
-				{entry.pronunciation && !entry.remoteDictionaryEntry && (
+				{entry.partOfSpeech && (
 					<div>
-						<h3 className="font-semibold">Pronunciation:</h3>
-						<p>/{entry.pronunciation}/ </p>
+						<h3 className="font-semibold text-foreground">Part of Speech:</h3>
+						<p className="text-foreground">{entry.partOfSpeech}</p>
 					</div>
 				)}
-
-				{entry.partOfSpeech && !entry.remoteDictionaryEntry && (
+				{entry.example && (
 					<div>
-						<h3 className="font-semibold">Part of Speech:</h3>
-						<p>{entry.partOfSpeech}</p>
+						<h3 className="font-semibold text-foreground">Example:</h3>
+						<p className="text-muted-foreground italic">{entry.example}</p>
 					</div>
 				)}
-
-				{entry.example && !entry.remoteDictionaryEntry && (
-					<div>
-						<h3 className="font-semibold">Example:</h3>
-						<p>{entry.example}</p>
-					</div>
-				)}
-
 				{entry.notes && (
 					<div>
-						<h3 className="font-semibold">Notes:</h3>
-						<p>{entry.notes}</p>
+						<h3 className="font-semibold text-foreground">Notes:</h3>
+						<p className="text-foreground">{entry.notes}</p>
 					</div>
 				)}
 			</CardContent>
