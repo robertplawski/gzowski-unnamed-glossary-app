@@ -5,7 +5,7 @@ import { Link } from "@tanstack/react-router";
 export default function Footer() {
 	const healthCheck = useQuery(orpc.healthCheck.queryOptions());
 	return (
-		<footer className="relative bottom-0 left-0 right-0 border-t bg-background p-2 text-xs">
+		<footer className="relative bottom-0 left-0 right-0 border-t bg-background p-2 text-xs z-50 mb-16 md:mb-0">
 			<div className="container mx-auto max-w-6xl">
 				<div className="flex flex-col sm:flex-row items-center justify-between gap-2">
 					<div className="flex items-center gap-4">
@@ -32,7 +32,7 @@ export default function Footer() {
 								rel="noopener noreferrer"
 								className="underline hover:text-foreground transition-colors"
 							>
-								Github
+								GitHub
 							</a>
 						</span>
 					</div>

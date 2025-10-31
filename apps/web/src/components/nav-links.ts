@@ -1,5 +1,4 @@
 import {
-  LayoutDashboard,
   LucideBookA,
   LucideCalendar,
   LucideClover,
@@ -26,10 +25,5 @@ export const navLinks = [
     to: "/challenging",
     label: "Challenging",
     icon: LucideTrophy,
-  },
-  {
-    to: "/dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
   },
 ] as const;
