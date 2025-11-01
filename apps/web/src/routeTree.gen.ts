@@ -10,14 +10,21 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SuccessRouteImport } from './routes/success'
+import { Route as RandomRouteImport } from './routes/random'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GlossaryRouteImport } from './routes/glossary'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ChallengingRouteImport } from './routes/challenging'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SuccessRoute = SuccessRouteImport.update({
   id: '/success',
   path: '/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RandomRoute = RandomRouteImport.update({
+  id: '/random',
+  path: '/random',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -35,6 +42,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChallengingRoute = ChallengingRouteImport.update({
+  id: '/challenging',
+  path: '/challenging',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -43,39 +55,69 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/challenging': typeof ChallengingRoute
   '/dashboard': typeof DashboardRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
+  '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/challenging': typeof ChallengingRoute
   '/dashboard': typeof DashboardRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
+  '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/challenging': typeof ChallengingRoute
   '/dashboard': typeof DashboardRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
+  '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/glossary' | '/login' | '/success'
+  fullPaths:
+    | '/'
+    | '/challenging'
+    | '/dashboard'
+    | '/glossary'
+    | '/login'
+    | '/random'
+    | '/success'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/glossary' | '/login' | '/success'
-  id: '__root__' | '/' | '/dashboard' | '/glossary' | '/login' | '/success'
+  to:
+    | '/'
+    | '/challenging'
+    | '/dashboard'
+    | '/glossary'
+    | '/login'
+    | '/random'
+    | '/success'
+  id:
+    | '__root__'
+    | '/'
+    | '/challenging'
+    | '/dashboard'
+    | '/glossary'
+    | '/login'
+    | '/random'
+    | '/success'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChallengingRoute: typeof ChallengingRoute
   DashboardRoute: typeof DashboardRoute
   GlossaryRoute: typeof GlossaryRoute
   LoginRoute: typeof LoginRoute
+  RandomRoute: typeof RandomRoute
   SuccessRoute: typeof SuccessRoute
 }
 
@@ -86,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/success'
       fullPath: '/success'
       preLoaderRoute: typeof SuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/random': {
+      id: '/random'
+      path: '/random'
+      fullPath: '/random'
+      preLoaderRoute: typeof RandomRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -109,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/challenging': {
+      id: '/challenging'
+      path: '/challenging'
+      fullPath: '/challenging'
+      preLoaderRoute: typeof ChallengingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -121,9 +177,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChallengingRoute: ChallengingRoute,
   DashboardRoute: DashboardRoute,
   GlossaryRoute: GlossaryRoute,
   LoginRoute: LoginRoute,
+  RandomRoute: RandomRoute,
   SuccessRoute: SuccessRoute,
 }
 export const routeTree = rootRouteImport

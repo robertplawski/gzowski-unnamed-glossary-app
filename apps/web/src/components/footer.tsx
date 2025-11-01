@@ -1,3 +1,4 @@
+import getServerUrl from "@/utils/getServerUrl";
 import { orpc } from "@/utils/orpc";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -37,7 +38,7 @@ export default function Footer() {
 						</span>
 					</div>
 
-					<Link to={import.meta.env.VITE_SERVER_URL + "/api-reference"}>
+					<Link to={getServerUrl() + "/api-reference"}>
 						<div className="flex items-center gap-2">
 							<div
 								className={`h-2 w-2 rounded-full ${healthCheck.data ? "bg-green-500" : "bg-red-500"}`}

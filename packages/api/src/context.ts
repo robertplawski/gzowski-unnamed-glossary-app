@@ -10,6 +10,7 @@ export async function createContext({ context }: CreateContextOptions) {
 		headers: context.req.raw.headers,
 	});
 	return {
+		env: context.env,
 		session,
 	};
 }

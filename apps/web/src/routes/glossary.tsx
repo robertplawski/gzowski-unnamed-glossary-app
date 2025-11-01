@@ -1,110 +1,77 @@
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { orpc } from "@/utils/orpc";
 import { useQuery } from "@tanstack/react-query";
+import { EntryCard } from "@/components/entry-card";
 
 export const Route = createFileRoute("/glossary")({
 	component: RouteComponent,
 });
 
-function EntryCard({ entry }: { entry: any }) {
-	const [toggled, setToggled] = useState(false);
-	const [dictionaryData, setDictionaryData] = useState({});
+// Custom debounce hook
+function useDebounce(value: string, delay: number) {
+	const [debouncedValue, setDebouncedValue] = useState(value);
+
 	useEffect(() => {
-		if (!toggled) {
-			setDictionaryData({});
-		} else {
-			async function fetchData() {
-				const request = await fetch(
-					`https://api.dictionaryapi.dev/api/v2/entries/en/${entry.word}`,
-					{ cache: "force-cache" },
-				);
+		const handler = setTimeout(() => {
+			setDebouncedValue(value);
+		}, delay);
 
-				const data = await request.json();
-				setDictionaryData(data);
-			}
-			fetchData();
-		}
-	}, [toggled, setDictionaryData]);
-	return (
-		<Card onClick={() => setToggled(true)} key={entry.id}>
-			<CardHeader>
-				<CardTitle>{entry.word}</CardTitle>
-			</CardHeader>
-			<CardContent className="grid gap-2">
-				{entry.translation && (
-					<div>
-						<h3 className="font-semibold">Translation:</h3>
-						<p>{entry.translation}</p>
-					</div>
-				)}
+		return () => {
+			clearTimeout(handler);
+		};
+	}, [value, delay]);
 
-				{JSON.stringify(dictionaryData)}
-				{entry.pronunciation && (
-					<div>
-						<h3 className="font-semibold">Pronunciation:</h3>
-						<p>/{entry.pronunciation}/ </p>
-					</div>
-				)}
-				{entry.partOfSpeech && (
-					<div>
-						<h3 className="font-semibold">Part of Speech:</h3>
-						<p>{entry.partOfSpeech}</p>
-					</div>
-				)}
-				{entry.example && (
-					<div>
-						<h3 className="font-semibold">Example:</h3>
-						<p>{entry.example}</p>
-					</div>
-				)}
-				{entry.notes && (
-					<div>
-						<h3 className="font-semibold">Notes:</h3>
-						<p>{entry.notes}</p>
-					</div>
-				)}
-			</CardContent>
-		</Card>
-	);
+	return debouncedValue;
 }
 
+// Main Route Component
 function RouteComponent() {
 	const [searchTerm, setSearchTerm] = useState("");
-	const [filteredEntries, setFilteredEntries] = useState<any[]>([]); // Consider defining a proper type
+	const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-	// Fetch all entries using the router
+	// Use the search procedure for server-side searching
 	const {
-		data: allEntries,
+		data: searchResults,
 		isLoading,
 		error,
-	} = useQuery(orpc.entry.getAll.queryOptions());
+	} = useQuery({
+		...orpc.entry.search.queryOptions({
+			input: {
+				query: debouncedSearchTerm,
+				limit: 50,
+				offset: 0,
+			},
+		}),
+		enabled: debouncedSearchTerm.length > 0, // Only search when there's a query
+	});
 
-	// Filter entries based on search term
-	useEffect(() => {
-		if (allEntries && searchTerm) {
-			const term = searchTerm.toLowerCase();
-			const results = allEntries.filter(
-				(entry) =>
-					entry.word.toLowerCase().includes(term) ||
-					(entry.translation &&
-						entry.translation.toLowerCase().includes(term)) ||
-					(entry.example && entry.example.toLowerCase().includes(term)) ||
-					(entry.notes && entry.notes.toLowerCase().includes(term)),
-			);
-			setFilteredEntries(results);
-		} else if (allEntries) {
-			// Show all entries if search term is empty
-			setFilteredEntries(allEntries);
-		}
-	}, [searchTerm, allEntries]);
+	// Fetch all entries when no search term (optional - you might want to remove this)
+	const {
+		data: allEntries,
+		isLoading: isLoadingAll,
+		error: allEntriesError,
+	} = useQuery({
+		...orpc.entry.getAll.queryOptions(),
+		enabled: debouncedSearchTerm.length === 0, // Only fetch all when no search
+	});
 
-	if (error) {
+	// Determine which data to display
+	const displayData =
+		debouncedSearchTerm.length > 0
+			? searchResults?.entries || []
+			: allEntries || [];
+
+	const displayIsLoading =
+		debouncedSearchTerm.length > 0 ? isLoading : isLoadingAll;
+
+	const displayError = debouncedSearchTerm.length > 0 ? error : allEntriesError;
+
+	if (displayError) {
 		return (
-			<div className="max-w-6xl mx-auto container p-6">
-				Error loading entries: {error.message}
+			<div className="max-w-6xl mx-auto container p-6 text-destructive">
+				Error loading entries: {displayError.message}
 			</div>
 		);
 	}
@@ -113,27 +80,40 @@ function RouteComponent() {
 		<div className="max-w-6xl mx-auto container">
 			<div className="grid gap-6 p-6 sm:p-12">
 				<div className="flex flex-col gap-4">
-					<h1 className="font-bold text-3xl ">Search words...</h1>
-					<p>Enter you query in the field above.</p>
+					<h1 className="font-bold text-3xl text-foreground">
+						Search words...
+					</h1>
+					<p className="text-muted-foreground">
+						Enter your query in the field above.
+					</p>
 				</div>
 
 				<Input
 					placeholder="Type to search..."
 					value={searchTerm}
 					onChange={(e) => setSearchTerm(e.target.value)}
+					className="bg-background"
 				/>
-				{isLoading ? (
-					<p>Loading entries...</p>
+
+				{displayIsLoading ? (
+					<p className="text-muted-foreground">
+						{debouncedSearchTerm.length > 0
+							? "Searching..."
+							: "Loading entries..."}
+					</p>
 				) : (
 					<div>
 						<div className="grid gap-4">
-							{filteredEntries.map((entry) => (
-								<EntryCard key={entry.word} entry={entry} />
+							{displayData.map((entry) => (
+								<EntryCard key={entry.id || entry.word} entry={entry} />
 							))}
 						</div>
-						{searchTerm && (
-							<p className="text-sm text-gray-500 mb-4">
-								Found {filteredEntries.length} result(s)
+						{debouncedSearchTerm.length > 0 && (
+							<p className="text-sm text-muted-foreground mb-4 mt-4">
+								Found {displayData.length} result(s)
+								{searchResults?.pagination &&
+									searchResults.pagination.total > displayData.length &&
+									` out of ${searchResults.pagination.total}`}
 							</p>
 						)}
 					</div>

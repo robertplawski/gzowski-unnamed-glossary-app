@@ -36,10 +36,13 @@ Local development for a Cloudflare D1 database will already be running as part o
 
 2. Update your `.env` file in the `apps/server` directory with the appropriate connection details if needed.
 
-3. Apply the schema to your database:
+3. Apply schema locally - cd in to `apps/server` and run 
 ```bash
-npm run db:push
+npm run apply-local
 ```
+
+## Frontend ENV setup
+Set `.env` file in `apps/web` to have VITE_SERVER_URL = "http://localhost:3000" or wherever your backend is 
 
 
 Then, run the development server:

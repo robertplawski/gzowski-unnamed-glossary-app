@@ -1,19 +1,69 @@
 import { publicProcedure, protectedProcedure } from "../index";
-import { eq, and } from "drizzle-orm";
+import { eq, or, sql, like, desc } from "drizzle-orm";
 import { ORPCError, type RouterClient } from "@orpc/server";
 import { db } from "@gzowski-unnamed-glossary-app/db";
+
 import {
 	dictionary,
 	entry,
-	tag,
-	entryTag,
-	comment,
 	entryVote,
-	commentVote,
 } from "@gzowski-unnamed-glossary-app/db/schema/dictionary";
 import { auth } from "@gzowski-unnamed-glossary-app/auth";
 import { z } from "zod";
 import { randomUUID } from "crypto";
+
+// Helper function to get remote dictionary entry
+async function getRemoteDictionaryEntry(word: string, context: any) {
+	try {
+		// Check cache first
+		const cachedData = await context.env.WORD_CACHE.get(word);
+		if (cachedData) {
+			return JSON.parse(cachedData);
+		}
+
+		// Fetch from API if not in cache
+		const response = await fetch(
+			`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
+			{
+				headers: {
+					Accept: "application/json",
+					"Content-Type": "application/json",
+					"User-Agent": "DictionaryApp/1.0.0",
+				},
+			},
+		);
+
+		// Check if response is OK and content type is JSON
+		if (!response.ok) {
+			console.warn(`API returned ${response.status} for word: ${word}`);
+			return null;
+		}
+		const dictionaryData = await response.json();
+		const remoteData = dictionaryData[0];
+
+		// Cache for future use
+		await context.env.WORD_CACHE.put(word, JSON.stringify(remoteData));
+		return remoteData;
+	} catch (error) {
+		console.error(`Failed to fetch remote data for word: ${word}`, error);
+		return null;
+	}
+}
+
+// Helper function to enrich entries with remote data
+async function enrichEntriesWithRemoteData(entries: any[], context: any) {
+	return Promise.all(
+		entries
+			.filter((_, index) => index < 10) // MAX 10
+			.map(async (entry) => ({
+				...entry,
+				remoteDictionaryEntry: await getRemoteDictionaryEntry(
+					entry.word,
+					context,
+				),
+			})),
+	);
+}
 
 // ===== Dictionary Schemas =====
 const dictionaryCreateSchema = z.object({
@@ -60,84 +110,6 @@ const entryByDictionarySchema = z.object({
 	dictionaryId: z.string().uuid(),
 });
 
-// ===== Tag Schemas =====
-const tagCreateSchema = z.object({
-	name: z.string().min(1),
-});
-
-const tagIdSchema = z.object({
-	id: z.string().uuid(),
-});
-
-// ===== Entry Tag Schemas =====
-const entryTagCreateSchema = z.object({
-	entryId: z.string().uuid(),
-	tagId: z.string().uuid(),
-});
-
-const entryTagDeleteSchema = z.object({
-	entryId: z.string().uuid(),
-	tagId: z.string().uuid(),
-});
-
-const tagsByEntrySchema = z.object({
-	entryId: z.string().uuid(),
-});
-
-// ===== Comment Schemas =====
-const commentCreateSchema = z.object({
-	entryId: z.string().uuid(),
-	text: z.string().min(1),
-	image: z.string().optional(),
-});
-
-const commentUpdateSchema = z.object({
-	id: z.string().uuid(),
-	text: z.string().min(1).optional(),
-	image: z.string().optional(),
-});
-
-const commentIdSchema = z.object({
-	id: z.string().uuid(),
-});
-
-const commentsByEntrySchema = z.object({
-	entryId: z.string().uuid(),
-});
-
-// ===== Vote Schemas =====
-const entryVoteSchema = z.object({
-	entryId: z.string().uuid(),
-	value: z
-		.number()
-		.int()
-		.min(-1)
-		.max(1)
-		.refine((v) => v === 1 || v === -1, {
-			message: "Vote value must be 1 or -1",
-		}),
-});
-
-const commentVoteSchema = z.object({
-	commentId: z.string().uuid(),
-	value: z
-		.number()
-		.int()
-		.min(-1)
-		.max(1)
-		.refine((v) => v === 1 || v === -1, {
-			message: "Vote value must be 1 or -1",
-		}),
-});
-
-const entryVoteDeleteSchema = z.object({
-	entryId: z.string().uuid(),
-});
-
-const commentVoteDeleteSchema = z.object({
-	commentId: z.string().uuid(),
-});
-
 // ===== JSON Import Schemas (as per original, matching the provided JSON) =====
 const vocabularyItemSchema = z.object({
 	word: z.string(),
@@ -165,6 +137,10 @@ const importJsonSchema = z.object({
 });
 
 type ImportJson = z.infer<typeof importJsonSchema>;
+
+const remoteEntryInput = z.object({
+	word: z.string(),
+});
 
 // Function to parse the import JSON and extract vocabulary entries
 function parseImportJson(json: unknown): ImportJson {
@@ -288,24 +264,132 @@ export const dictionaryRouter = {
 	// ===== Entry Routes =====
 	// Public endpoints for reading entries
 	entry: {
-		getAll: publicProcedure.handler(async () => {
-			return db.select().from(entry).all();
+		getRemoteEntry: publicProcedure
+			.input(remoteEntryInput)
+			.handler(async ({ input: { word }, context }) => {
+				const remoteData = await getRemoteDictionaryEntry(word, context);
+				return JSON.stringify(remoteData);
+			}),
+
+		// Add this to your existing procedures
+		search: publicProcedure
+			.input(
+				z.object({
+					query: z.string().min(1, "Search query cannot be empty"),
+					limit: z.number().min(1).max(100).optional().default(20),
+					offset: z.number().min(0).optional().default(0),
+				}),
+			)
+			.handler(async ({ input, context }) => {
+				const { query, limit, offset } = input;
+
+				// Search across multiple fields using SQLite LIKE (which is case-insensitive)
+				const entries = await db
+					.select()
+					.from(entry)
+					.where(
+						or(
+							like(entry.word, `%${query}%`),
+							like(entry.translation, `%${query}%`),
+							like(entry.example, `%${query}%`),
+							like(entry.notes, `%${query}%`),
+							like(entry.partOfSpeech, `%${query}%`),
+						),
+					)
+					.limit(limit)
+					.offset(offset)
+					.all();
+
+				const enrichedEntries = await enrichEntriesWithRemoteData(
+					entries,
+					context,
+				);
+
+				// Get total count for pagination
+				const totalResult = await db
+					.select({ count: sql<number>`count(*)` })
+					.from(entry)
+					.where(
+						or(
+							like(entry.word, `%${query}%`),
+							like(entry.translation, `%${query}%`),
+							like(entry.example, `%${query}%`),
+							like(entry.notes, `%${query}%`),
+							like(entry.partOfSpeech, `%${query}%`),
+						),
+					)
+					.get();
+
+				return {
+					entries: enrichedEntries,
+					pagination: {
+						total: totalResult?.count || 0,
+						limit,
+						offset,
+						hasMore: offset + limit < (totalResult?.count || 0),
+					},
+				};
+			}),
+		getAll: publicProcedure.handler(async ({ context }) => {
+			const entries = await db.select().from(entry).all();
+			return enrichEntriesWithRemoteData(entries, context);
+		}),
+		getSortedByVotes: publicProcedure.handler(async ({ context }) => {
+			// Get entries with vote counts using a join
+			const entriesWithVoteCounts = await db
+				.select({
+					entry: entry,
+					voteCount: sql<number>`SUM(${entryVote.value})`.as("voteCount"),
+				})
+				.from(entry)
+				.leftJoin(entryVote, eq(entry.id, entryVote.entryId))
+				.groupBy(entry.id)
+				.orderBy(desc(sql`voteCount`))
+				.all();
+
+			// Extract just the entries for enrichment
+			const entries = entriesWithVoteCounts.map((row) => row.entry);
+			return enrichEntriesWithRemoteData(entries, context);
+		}),
+		getRandom: publicProcedure.handler(async ({ context }) => {
+			const entries = await db
+				.select()
+				.from(entry)
+				.orderBy(sql`RANDOM()`)
+				.limit(1);
+			return enrichEntriesWithRemoteData(entries, context);
 		}),
 
 		getById: publicProcedure
 			.input(entryIdSchema)
-			.handler(async ({ input: { id } }) => {
-				return db.select().from(entry).where(eq(entry.id, id)).get();
+			.handler(async ({ input: { id }, context }) => {
+				const dbEntry = await db
+					.select()
+					.from(entry)
+					.where(eq(entry.id, id))
+					.get();
+
+				if (!dbEntry) {
+					return null;
+				}
+
+				const enrichedEntries = await enrichEntriesWithRemoteData(
+					[dbEntry],
+					context,
+				);
+				return enrichedEntries[0];
 			}),
 
 		getByDictionary: publicProcedure
 			.input(entryByDictionarySchema)
-			.handler(async ({ input: { dictionaryId } }) => {
-				return db
+			.handler(async ({ input: { dictionaryId }, context }) => {
+				const entries = await db
 					.select()
 					.from(entry)
 					.where(eq(entry.dictionaryId, dictionaryId))
 					.all();
+
+				return enrichEntriesWithRemoteData(entries, context);
 			}),
 		importFromJson: protectedProcedure
 			.input(
@@ -514,449 +598,6 @@ export const dictionaryRouter = {
 				}
 
 				await db.delete(entry).where(eq(entry.id, id));
-				return { success: true };
-			}),
-	},
-
-	/*// ===== Tag Routes =====
-	tag: {
-		getAll: publicProcedure.handler(async () => {
-			return db.select().from(tag).all();
-		}),
-
-		getById: publicProcedure
-			.input(tagIdSchema)
-			.handler(async ({ input: { id } }) => {
-				return db.select().from(tag).where(eq(tag.id, id)).get();
-			}),
-
-		// Authenticated users can create tags
-		create: protectedProcedure
-			.input(tagCreateSchema)
-			.handler(async ({ input: { name }, context }) => {
-				// Check if user has permission to create tags
-				const { success: hasPermission } = await auth.api.userHasPermission({
-					body: {
-						userId: context.session.user.id,
-						permission: { tag: ["create"] },
-					},
-				});
-
-				if (!hasPermission) {
-					throw new ORPCError("FORBIDDEN");
-				}
-
-				const id = randomUUID();
-				const timestamp = new Date();
-				await db.insert(tag).values({
-					id,
-					name,
-					createdAt: timestamp,
-					updatedAt: timestamp,
-				});
-				return { success: true, id };
-			}),
-
-		// Admin/moderator can delete tags
-		delete: protectedProcedure
-			.input(tagIdSchema)
-			.handler(async ({ input: { id }, context }) => {
-				// Check if user has permission to delete tags
-				const { success: hasPermission } = await auth.api.userHasPermission({
-					body: {
-						userId: context.session.user.id,
-						permission: { tag: ["delete"] },
-					},
-				});
-
-				if (!hasPermission) {
-					throw new ORPCError("FORBIDDEN");
-				}
-
-				await db.delete(tag).where(eq(tag.id, id));
-				return { success: true };
-			}),
-	},
-
-	// ===== Entry Tag Routes =====
-	entryTag: {
-		getByEntry: publicProcedure
-			.input(tagsByEntrySchema)
-			.handler(async ({ input: { entryId } }) => {
-				return db
-					.select()
-					.from(entryTag)
-					.innerJoin(tag, eq(entryTag.tagId, tag.id))
-					.where(eq(entryTag.entryId, entryId))
-					.all();
-			}),
-
-		// Authenticated users can tag entries
-		create: protectedProcedure
-			.input(entryTagCreateSchema)
-			.handler(async ({ input: { entryId, tagId }, context }) => {
-				// Check if user has permission to create entry tags
-				const { success: hasPermission } = await auth.api.userHasPermission({
-					body: {
-						userId: context.session.user.id,
-						permission: { entryTag: ["create"] },
-					},
-				});
-
-				if (!hasPermission) {
-					throw new ORPCError("FORBIDDEN");
-				}
-
-				await db.insert(entryTag).values({
-					entryId,
-					tagId,
-				});
-				return { success: true };
-			}),
-
-		// Admin/moderator can remove tags from entries
-		delete: protectedProcedure
-			.input(entryTagDeleteSchema)
-			.handler(async ({ input: { entryId, tagId }, context }) => {
-				// Check if user has permission to delete entry tags
-				const { success: hasPermission } = await auth.api.userHasPermission({
-					body: {
-						userId: context.session.user.id,
-						permission: { entryTag: ["delete"] },
-					},
-				});
-
-				if (!hasPermission) {
-					throw new ORPCError("FORBIDDEN");
-				}
-
-				await db
-					.delete(entryTag)
-					.where(and(eq(entryTag.entryId, entryId), eq(entryTag.tagId, tagId)));
-				return { success: true };
-			}),
-	},*/
-
-	// ===== Comment Routes =====
-	comment: {
-		getById: publicProcedure
-			.input(commentIdSchema)
-			.handler(async ({ input: { id } }) => {
-				return db.select().from(comment).where(eq(comment.id, id)).get();
-			}),
-
-		getByEntry: publicProcedure
-			.input(commentsByEntrySchema)
-			.handler(async ({ input: { entryId } }) => {
-				return db
-					.select()
-					.from(comment)
-					.where(eq(comment.entryId, entryId))
-					.all();
-			}),
-
-		// Authenticated users can create comments
-		create: protectedProcedure
-			.input(commentCreateSchema)
-			.handler(async ({ input: { entryId, text, image }, context }) => {
-				// Check if user has permission to create comments
-				const { success: hasPermission } = await auth.api.userHasPermission({
-					body: {
-						userId: context.session.user.id,
-						permission: { comment: ["create"] },
-					},
-				});
-
-				if (!hasPermission) {
-					throw new ORPCError("FORBIDDEN");
-				}
-
-				const userId = context.session.user.id;
-
-				const id = randomUUID();
-				const timestamp = new Date();
-				await db.insert(comment).values({
-					id,
-					entryId,
-					userId,
-					text,
-					image: image ?? null,
-					score: 0,
-					createdAt: timestamp,
-					updatedAt: timestamp,
-				});
-				return { success: true, id };
-			}),
-
-		// Admin/moderator can update any comment
-		update: protectedProcedure
-			.input(commentUpdateSchema)
-			.handler(async ({ input: { id, text, image }, context }) => {
-				// Check if user has permission to update comments
-				const { success: hasPermission } = await auth.api.userHasPermission({
-					body: {
-						userId: context.session.user.id,
-						permission: { comment: ["update"] },
-					},
-				});
-
-				if (!hasPermission) {
-					throw new ORPCError("FORBIDDEN");
-				}
-
-				const updates: Record<string, any> = {
-					updatedAt: new Date(),
-				};
-				if (text !== undefined) updates.text = text;
-				if (image !== undefined) updates.image = image ?? null;
-
-				await db.update(comment).set(updates).where(eq(comment.id, id));
-				return { success: true };
-			}),
-
-		// Admin/moderator can delete any comment
-		delete: protectedProcedure
-			.input(commentIdSchema)
-			.handler(async ({ input: { id }, context }) => {
-				// Check if user has permission to delete comments
-				const { success: hasPermission } = await auth.api.userHasPermission({
-					body: {
-						userId: context.session.user.id,
-						permission: { comment: ["delete"] },
-					},
-				});
-
-				if (!hasPermission) {
-					throw new ORPCError("FORBIDDEN");
-				}
-
-				await db.delete(comment).where(eq(comment.id, id));
-				return { success: true };
-			}),
-	},
-
-	// ===== Entry Vote Routes =====
-	entryVote: {
-		// Authenticated users can vote on entries
-		vote: protectedProcedure
-			.input(entryVoteSchema)
-			.handler(async ({ input: { entryId, value }, context }) => {
-				const userId = context.session.user.id;
-
-				// Check if vote exists
-				const existingVote = await db
-					.select()
-					.from(entryVote)
-					.where(
-						and(eq(entryVote.entryId, entryId), eq(entryVote.userId, userId)),
-					)
-					.get();
-
-				const timestamp = new Date();
-
-				if (existingVote) {
-					const oldValue = existingVote.value;
-					// Update existing vote
-					await db
-						.update(entryVote)
-						.set({ value, updatedAt: timestamp })
-						.where(eq(entryVote.id, existingVote.id));
-
-					// Update entry score (remove old value, add new value)
-					const scoreDiff = value - oldValue;
-					if (scoreDiff !== 0) {
-						const currentEntry = await db
-							.select({ score: entry.score })
-							.from(entry)
-							.where(eq(entry.id, entryId))
-							.get();
-
-						if (currentEntry) {
-							await db
-								.update(entry)
-								.set({ score: currentEntry.score + scoreDiff })
-								.where(eq(entry.id, entryId));
-						}
-					}
-				} else {
-					// Create new vote
-					const id = randomUUID();
-					await db.insert(entryVote).values({
-						id,
-						entryId,
-						userId,
-						value,
-						createdAt: timestamp,
-						updatedAt: timestamp,
-					});
-
-					// Update entry score
-					const currentEntry = await db
-						.select({ score: entry.score })
-						.from(entry)
-						.where(eq(entry.id, entryId))
-						.get();
-
-					if (currentEntry) {
-						await db
-							.update(entry)
-							.set({ score: currentEntry.score + value })
-							.where(eq(entry.id, entryId));
-					}
-				}
-
-				return { success: true };
-			}),
-
-		// Authenticated users can remove their vote
-		removeVote: protectedProcedure
-			.input(entryVoteDeleteSchema)
-			.handler(async ({ input: { entryId }, context }) => {
-				const userId = context.session.user.id;
-
-				const existingVote = await db
-					.select()
-					.from(entryVote)
-					.where(
-						and(eq(entryVote.entryId, entryId), eq(entryVote.userId, userId)),
-					)
-					.get();
-
-				if (existingVote) {
-					await db.delete(entryVote).where(eq(entryVote.id, existingVote.id));
-
-					// Update entry score
-					const currentEntry = await db
-						.select({ score: entry.score })
-						.from(entry)
-						.where(eq(entry.id, entryId))
-						.get();
-
-					if (currentEntry) {
-						await db
-							.update(entry)
-							.set({ score: currentEntry.score - existingVote.value })
-							.where(eq(entry.id, entryId));
-					}
-				}
-
-				return { success: true };
-			}),
-	},
-
-	// ===== Comment Vote Routes =====
-	commentVote: {
-		// Authenticated users can vote on comments
-		vote: protectedProcedure
-			.input(commentVoteSchema)
-			.handler(async ({ input: { commentId, value }, context }) => {
-				const userId = context.session.user.id;
-
-				// Check if vote exists
-				const existingVote = await db
-					.select()
-					.from(commentVote)
-					.where(
-						and(
-							eq(commentVote.commentId, commentId),
-							eq(commentVote.userId, userId),
-						),
-					)
-					.get();
-
-				const timestamp = new Date();
-
-				if (existingVote) {
-					const oldValue = existingVote.value;
-					// Update existing vote
-					await db
-						.update(commentVote)
-						.set({ value, updatedAt: timestamp })
-						.where(eq(commentVote.id, existingVote.id));
-
-					// Update comment score (remove old value, add new value)
-					const scoreDiff = value - oldValue;
-					if (scoreDiff !== 0) {
-						const currentComment = await db
-							.select({ score: comment.score })
-							.from(comment)
-							.where(eq(comment.id, commentId))
-							.get();
-
-						if (currentComment) {
-							await db
-								.update(comment)
-								.set({ score: currentComment.score + scoreDiff })
-								.where(eq(comment.id, commentId));
-						}
-					}
-				} else {
-					// Create new vote
-					const id = randomUUID();
-					await db.insert(commentVote).values({
-						id,
-						commentId,
-						userId,
-						value,
-						createdAt: timestamp,
-						updatedAt: timestamp,
-					});
-
-					// Update comment score
-					const currentComment = await db
-						.select({ score: comment.score })
-						.from(comment)
-						.where(eq(comment.id, commentId))
-						.get();
-
-					if (currentComment) {
-						await db
-							.update(comment)
-							.set({ score: currentComment.score + value })
-							.where(eq(comment.id, commentId));
-					}
-				}
-
-				return { success: true };
-			}),
-
-		// Authenticated users can remove their vote
-		removeVote: protectedProcedure
-			.input(commentVoteDeleteSchema)
-			.handler(async ({ input: { commentId }, context }) => {
-				const userId = context.session.user.id;
-
-				const existingVote = await db
-					.select()
-					.from(commentVote)
-					.where(
-						and(
-							eq(commentVote.commentId, commentId),
-							eq(commentVote.userId, userId),
-						),
-					)
-					.get();
-
-				if (existingVote) {
-					await db
-						.delete(commentVote)
-						.where(eq(commentVote.id, existingVote.id));
-
-					// Update comment score
-					const currentComment = await db
-						.select({ score: comment.score })
-						.from(comment)
-						.where(eq(comment.id, commentId))
-						.get();
-
-					if (currentComment) {
-						await db
-							.update(comment)
-							.set({ score: currentComment.score - existingVote.value })
-							.where(eq(comment.id, commentId));
-					}
-				}
-
 				return { success: true };
 			}),
 	},
