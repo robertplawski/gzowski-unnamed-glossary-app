@@ -20,8 +20,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { orpc, queryClient } from "@/utils/orpc";
 import { useNavigate } from "@tanstack/react-router";
 
-// make entry context please
-//
 function EntryInteractions({ entry }: { entry: any }) {
 	const navigate = useNavigate();
 	const handleAuthRedirect = () => navigate({ to: "/login", throw: true });
@@ -37,37 +35,124 @@ function EntryInteractions({ entry }: { entry: any }) {
 
 	const { mutate: vote } = useMutation(
 		orpc.entryVote.vote.mutationOptions({
-			onSuccess: () => {
-				// Invalidate the vote query to refetch the data
+			onMutate: async ({ entryId, value }) => {
+				// Cancel any outgoing refetches
+				await queryClient.cancelQueries({
+					queryKey: orpc.entryVote.getVote.queryOptions({
+						input: { entryId },
+					}).queryKey,
+				});
+
+				// Snapshot the previous value
+				const previousVote = queryClient.getQueryData(
+					orpc.entryVote.getVote.queryOptions({
+						input: { entryId },
+					}).queryKey,
+				);
+
+				// Optimistically update to the new value
+				queryClient.setQueryData(
+					orpc.entryVote.getVote.queryOptions({
+						input: { entryId },
+					}).queryKey,
+					(old: any) => {
+						if (!old) return old;
+						const scoreDiff = value - (old.userVote || 0);
+						return {
+							...old,
+							userVote: value,
+							entryScore: old.entryScore + scoreDiff,
+						};
+					},
+				);
+
+				// Return context with the snapshotted value
+				return { previousVote, entryId };
+			},
+			onError: (error, variables, context) => {
+				// Rollback to the previous value on error
+				if (context?.previousVote) {
+					queryClient.setQueryData(
+						orpc.entryVote.getVote.queryOptions({
+							input: { entryId: context.entryId },
+						}).queryKey,
+						context.previousVote,
+					);
+				}
+				handleAuthRedirect(error);
+			},
+			onSettled: (data, error, variables) => {
+				// Always refetch after error or success to ensure we're in sync
 				queryClient.invalidateQueries({
 					queryKey: orpc.entryVote.getVote.queryOptions({
-						input: { entryId: entry.id },
+						input: { entryId: variables.entryId },
 					}).queryKey,
 				});
 				queryClient.invalidateQueries({
 					queryKey: orpc.entry.getSortedByVotes.queryOptions().queryKey,
 				});
-			},
-			onError: (error) => {
-				handleAuthRedirect(error);
 			},
 		}),
 	);
+
 	const { mutate: resetVote } = useMutation(
 		orpc.entryVote.resetVote.mutationOptions({
-			onSuccess: () => {
-				// Invalidate the vote query to refetch the data
+			onMutate: async ({ entryId }) => {
+				// Cancel any outgoing refetches
+				await queryClient.cancelQueries({
+					queryKey: orpc.entryVote.getVote.queryOptions({
+						input: { entryId },
+					}).queryKey,
+				});
+
+				// Snapshot the previous value
+				const previousVote = queryClient.getQueryData(
+					orpc.entryVote.getVote.queryOptions({
+						input: { entryId },
+					}).queryKey,
+				);
+
+				// Optimistically update to reset the vote
+				queryClient.setQueryData(
+					orpc.entryVote.getVote.queryOptions({
+						input: { entryId },
+					}).queryKey,
+					(old: any) => {
+						if (!old) return old;
+						const scoreDiff = -(old.userVote || 0);
+						return {
+							...old,
+							userVote: 0,
+							entryScore: old.entryScore + scoreDiff,
+						};
+					},
+				);
+
+				// Return context with the snapshotted value
+				return { previousVote, entryId };
+			},
+			onError: (error, variables, context) => {
+				// Rollback to the previous value on error
+				if (context?.previousVote) {
+					queryClient.setQueryData(
+						orpc.entryVote.getVote.queryOptions({
+							input: { entryId: context.entryId },
+						}).queryKey,
+						context.previousVote,
+					);
+				}
+				handleAuthRedirect(error);
+			},
+			onSettled: (data, error, variables) => {
+				// Always refetch after error or success to ensure we're in sync
 				queryClient.invalidateQueries({
 					queryKey: orpc.entryVote.getVote.queryOptions({
-						input: { entryId: entry.id },
+						input: { entryId: variables.entryId },
 					}).queryKey,
 				});
 				queryClient.invalidateQueries({
 					queryKey: orpc.entry.getSortedByVotes.queryOptions().queryKey,
 				});
-			},
-			onError: (error) => {
-				handleAuthRedirect(error);
 			},
 		}),
 	);
