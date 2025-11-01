@@ -14,6 +14,10 @@ import {
 import { auth } from "@gzowski-unnamed-glossary-app/auth";
 import { z } from "zod";
 import { randomUUID } from "crypto";
+import {
+	DictionaryAPIResponseSchema,
+	type DictionaryAPIResponse,
+} from "../types/dictionaryApi.ts";
 
 const offsetPaginationSchema = z.object({
 	page: z.number().min(1).default(1),
@@ -24,14 +28,14 @@ const offsetPaginationSchema = z.object({
 async function getRemoteDictionaryEntry(word: string, context: any) {
 	try {
 		// Check cache first
-		const cachedData = await context.env.WORD_CACHE.get(word);
-		if (cachedData) {
-			return JSON.parse(cachedData);
-		}
+		/*const cachedData = await context.env.WORD_CACHE.get(word);
+		if (cachedData && z.safeParse(DictionaryAPIResponseSchema, cachedData)) {
+			return cachedData;
+		}*/
 
 		// Fetch from API if not in cache
 		const response = await fetch(
-			`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
+			`https://freedictionaryapi.com/api/v1/entries/en/${encodeURIComponent(word)}?translations=true`, //`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
 			{
 				headers: {
 					Accept: "application/json",
@@ -46,8 +50,8 @@ async function getRemoteDictionaryEntry(word: string, context: any) {
 			console.warn(`API returned ${response.status} for word: ${word}`);
 			return null;
 		}
-		const dictionaryData = await response.json();
-		const remoteData = dictionaryData[0];
+		const remoteData =
+			(await response.json()) as unknown as DictionaryAPIResponse;
 
 		// Cache for future use
 		await context.env.WORD_CACHE.put(word, JSON.stringify(remoteData));
@@ -397,7 +401,11 @@ export const dictionaryRouter = {
 			return enrichEntriesWithRemoteData(entries, context);
 		}),
 		getRandom: publicProcedure.handler(async ({ context }) => {
-			const entries = await db.select().from(entry).orderBy(sql`RANDOM()`).limit(1);
+			const entries = await db
+				.select()
+				.from(entry)
+				.orderBy(sql`RANDOM()`)
+				.limit(1);
 			return enrichEntriesWithRemoteData(entries, context);
 		}),
 
