@@ -3,10 +3,13 @@ import {ModeToggle} from "./mode-toggle";
 import UserMenu from "./user-menu";
 import {useScrollPosition} from "./hooks/useScrollPosition"; // adjust path as needed
 import GUGAIcon from "../../public/union-jack.svg";
-import {navLinks as links} from "./nav-links";
+import {getNavLinks} from "./nav-links";
+import {useIsAuthorized} from "@/hooks/use-is-authorized";
 
 export default function Header() {
 	const {isScrolled} = useScrollPosition();
+	const {isAuthorized} = useIsAuthorized();
+	const links = getNavLinks(isAuthorized);
 
 	return (
 		<header

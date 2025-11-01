@@ -14,7 +14,6 @@ export default function Footer() {
 						</span>
 						<span className="hidden sm:inline text-muted-foreground">•</span>
 						<span className="text-muted-foreground">
-							Authors:{" "}
 							<a
 								href="https://eksabajt.pl"
 								target="_blank"

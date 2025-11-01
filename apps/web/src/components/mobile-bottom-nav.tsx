@@ -1,12 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { navLinks } from "./nav-links";
+import { baseNavLinks, getNavLinks } from "./nav-links";
+import { useIsAuthorized } from "@/hooks/use-is-authorized";
 
 export default function MobileBottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-
+  const { isAuthorized } = useIsAuthorized();
+  const navLinks = getNavLinks(isAuthorized);
+  
   return (
     <nav aria-label="Mobile navigation" className="fixed bottom-0 inset-x-0 md:hidden z-40 border-t bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-16">
-      <div className="mx-auto max-w-6xl grid grid-cols-4">
+      <div className={`mx-auto max-w-6xl grid`} style={{ gridTemplateColumns: `repeat(${navLinks.length}, minmax(0, 1fr))` }}>
         {navLinks.map(({ to, label, icon: Icon }) => {
           const isActive = pathname === to || pathname.startsWith(`${to}/`);
           return (

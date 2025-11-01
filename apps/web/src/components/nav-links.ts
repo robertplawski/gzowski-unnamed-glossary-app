@@ -3,9 +3,10 @@ import {
   LucideCalendar,
   LucideClover,
   LucideTrophy,
+  LucideLayoutDashboard,
 } from "lucide-react";
 
-export const navLinks = [
+export const baseNavLinks = [
   {
     to: "/glossary",
     label: "Glossary",
@@ -27,3 +28,17 @@ export const navLinks = [
     icon: LucideTrophy,
   },
 ] as const;
+
+export const dashboardLink = {
+  to: "/dashboard",
+  label: "Dashboard",
+  icon: LucideLayoutDashboard,
+  requiresAuth: true,
+} as const;
+
+export const getNavLinks = (isAuthorized: boolean) => {
+  if (isAuthorized) {
+    return [...baseNavLinks, dashboardLink];
+  }
+  return baseNavLinks;
+};
