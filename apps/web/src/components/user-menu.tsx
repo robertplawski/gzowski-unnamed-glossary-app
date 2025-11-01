@@ -14,7 +14,7 @@ import { Link } from "@tanstack/react-router";
 import {
 	LucideShield,
 	LucideUser,
-	LucideKey,
+	LucideUserCheck,
 	LucideMessageCircleQuestion,
 } from "lucide-react";
 
@@ -41,9 +41,9 @@ export default function UserMenu() {
 					{session.user.role === "user" ? (
 						<LucideUser />
 					) : session.user.role === "moderator" ? (
-						<LucideShield />
+						<LucideUserCheck />
 					) : session.user.role === "admin" ? (
-						<LucideKey />
+						<LucideShield />
 					) : (
 						<LucideMessageCircleQuestion />
 					)}
