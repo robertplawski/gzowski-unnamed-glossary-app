@@ -21,7 +21,9 @@ function RouteComponent() {
 					<h1 className="font-bold text-3xl text-foreground">
 						Random words...
 					</h1>
-					<p className="text-foreground-muted">Learn new random words</p>
+					<p className="text-muted-foreground">
+						Click a button to build a better vocabulary.
+					</p>
 					<Button
 						disabled={isLoading || isRefetching}
 						className="my-2 flexflex-row items-center justify-center"
@@ -41,7 +43,7 @@ function RouteComponent() {
 					</Button>
 				</div>
 				{isLoading || isRefetching ? (
-					<p>Loading entry</p>
+					<p>Loading entry...</p>
 				) : error ? (
 					<p>{error.message}</p>
 				) : (
