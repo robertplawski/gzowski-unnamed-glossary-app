@@ -12,7 +12,10 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
 const app = new Hono();
-const origins = [env.CORS_ORIGIN, "*.gzowski-unnamed-glossary-app.pages.dev"];
+const origins = [
+	env.CORS_ORIGIN,
+	"https://dev.gzowski-unnamed-glossary-app.pages.dev",
+];
 
 app.use(logger());
 app.use(
