@@ -2,7 +2,9 @@
 	"name": "gzowski-unnamed-glossary-app-server",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-06-15",
-	"compatibility_flags": ["nodejs_compat"],
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
 	"vars": {
 		"NODE_ENV": "production"
 		// Add public environment variables here
@@ -11,7 +13,6 @@
 	// For sensitive data, use:
 	// wrangler secret put SECRET_NAME
 	// Don't add secrets to "vars" - they're visible in the dashboard!
-
 	// To set up D1 database:
 	// 1. Run: wrangler login
 	// 2. Run: wrangler d1 create your-database-name
@@ -29,10 +30,14 @@
 			"migrations_dir": "../../packages/db/src/migrations"
 		}
 	],
-  "kv_namespaces": [
-    {
-      "binding": "WORD_CACHE",
-      "id": "e905512efc904026879e72fe3c86c6da"
-    }
-  ]
+	"kv_namespaces": [
+		{
+			"binding": "WORD_CACHE",
+			"id": "e905512efc904026879e72fe3c86c6da"
+		},
+		{
+			"binding": "TRANSLATION_CACHE",
+			"id": "5a2bbb40093845a8a82cd8d0db67064f"
+		}
+	]
 }

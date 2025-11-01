@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
-import { useState } from "react";
 
 interface DictionaryEntryProps {
 	entry: any;

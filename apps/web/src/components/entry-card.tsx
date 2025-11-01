@@ -1,4 +1,5 @@
 import { LucideVolume2 } from "lucide-react";
+
 import { DictionaryEntry } from "./dictionary-entry";
 import { Button } from "./ui/button";
 import {
@@ -71,7 +72,14 @@ export function EntryCard({ entry }: { entry: any }) {
 				{entry.translation && (
 					<div>
 						<h3 className="font-semibold text-foreground">Translation:</h3>
-						<p className="text-foreground">{entry.translation}</p>
+						<p className="text-foreground">
+							{[
+								entry.translation.translatedText,
+								...entry.translation.alternatives,
+							]
+								.map((v: string) => v)
+								.join(", ")}
+						</p>
 					</div>
 				)}
 

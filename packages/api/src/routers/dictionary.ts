@@ -2,7 +2,6 @@ import { publicProcedure, protectedProcedure } from "../index";
 import { eq, and, ilike, or, sql, like } from "drizzle-orm";
 import { ORPCError, type RouterClient } from "@orpc/server";
 import { db } from "@gzowski-unnamed-glossary-app/db";
-import { env } from "cloudflare:workers";
 
 import {
 	dictionary,
@@ -20,42 +19,82 @@ const offsetPaginationSchema = z.object({
 	limit: z.number().min(1).max(100).default(20),
 });
 
-// Helper function to get remote dictionary entry
-async function getRemoteDictionaryEntry(word: string, context: any) {
-	try {
-		// Check cache first
-		const cachedData = await context.env.WORD_CACHE.get(word);
-		if (cachedData) {
-			return JSON.parse(cachedData);
-		}
+const translationSchema = z.object({
+	alternatives: z.string().array(),
+	detectedLanguage: z.object({
+		confidence: z.number(),
+		language: z.enum(["pl", "en"]),
+	}),
+	translatedText: z.string(),
+});
 
-		// Fetch from API if not in cache
-		const response = await fetch(
-			`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
-			{
-				headers: {
-					Accept: "application/json",
-					"Content-Type": "application/json",
-					"User-Agent": "DictionaryApp/1.0.0",
-				},
-			},
-		);
+const entrySchema = z.object({
+	translation: translationSchema,
+});
 
-		// Check if response is OK and content type is JSON
-		if (!response.ok) {
-			console.warn(`API returned ${response.status} for word: ${word}`);
-			return null;
-		}
-		const dictionaryData = await response.json();
-		const remoteData = dictionaryData[0];
+export type EntryType = z.infer<typeof entrySchema>;
+export type TranslationType = z.infer<typeof translationSchema>;
 
-		// Cache for future use
-		await context.env.WORD_CACHE.put(word, JSON.stringify(remoteData));
-		return remoteData;
-	} catch (error) {
-		console.error(`Failed to fetch remote data for word: ${word}`, error);
+async function getRemoteTranslation(word: string, context: any) {
+	const cachedData = await context.env.TRANSLATION_CACHE.get(word);
+	if (cachedData && z.safeParse(translationSchema, cachedData)) {
+		return cachedData;
+	}
+	const response = await fetch(`${context.env.TRANSLATION_API_URL}/translate`, {
+		method: "POST",
+		body: JSON.stringify({
+			q: word,
+			source: "en",
+			target: "pl",
+			format: "text",
+			alternatives: 2,
+			api_key: "",
+		}),
+		headers: { "Content-Type": "application/json" },
+	});
+	if (!response.ok) {
+		console.warn(`API returned ${response.status} for word: ${word}`);
 		return null;
 	}
+	const json = await response.json();
+	if (!json) {
+		return null;
+	}
+	const data = json as unknown as TranslationType;
+	return data;
+}
+
+// Helper function to get remote dictionary entry
+async function getRemoteDictionaryEntry(word: string, context: any) {
+	// Check cache first
+	const cachedData = await context.env.WORD_CACHE.get(word);
+	if (cachedData) {
+		return JSON.parse(cachedData);
+	}
+
+	// Fetch from API if not in cache
+	const response = await fetch(
+		`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
+		{
+			headers: {
+				Accept: "application/json",
+				"Content-Type": "application/json",
+				"User-Agent": "DictionaryApp/1.0.0",
+			},
+		},
+	);
+
+	// Check if response is OK and content type is JSON
+	if (!response.ok) {
+		console.warn(`API returned ${response.status} for word: ${word}`);
+		return null;
+	}
+	const dictionaryData = await response.json();
+	const remoteData = dictionaryData[0];
+
+	// Cache for future use
+	await context.env.WORD_CACHE.put(word, JSON.stringify(remoteData));
+	return remoteData;
 }
 
 // Helper function to enrich entries with remote data
@@ -65,6 +104,7 @@ async function enrichEntriesWithRemoteData(entries: any[], context: any) {
 			.filter((_, index) => index < 10) // MAX 10
 			.map(async (entry) => ({
 				...entry,
+				translation: await getRemoteTranslation(entry.word, context),
 				remoteDictionaryEntry: await getRemoteDictionaryEntry(
 					entry.word,
 					context,
@@ -332,6 +372,11 @@ export const dictionaryRouter = {
 				const remoteData = await getRemoteDictionaryEntry(word, context);
 				return JSON.stringify(remoteData);
 			}),
+		getTranslation: publicProcedure
+			.input(remoteEntryInput)
+			.handler(async ({ input: { word }, context }) => {
+				return await getRemoteTranslation(word, context);
+			}),
 
 		// Add this to your existing procedures
 		search: publicProcedure
@@ -397,7 +442,11 @@ export const dictionaryRouter = {
 			return enrichEntriesWithRemoteData(entries, context);
 		}),
 		getRandom: publicProcedure.handler(async ({ context }) => {
-			const entries = await db.select().from(entry).orderBy(sql`RANDOM()`).limit(1);
+			const entries = await db
+				.select()
+				.from(entry)
+				.orderBy(sql`RANDOM()`)
+				.limit(1);
 			return enrichEntriesWithRemoteData(entries, context);
 		}),
 
