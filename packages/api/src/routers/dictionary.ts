@@ -396,6 +396,10 @@ export const dictionaryRouter = {
 			const entries = await db.select().from(entry).all();
 			return enrichEntriesWithRemoteData(entries, context);
 		}),
+		getRandom: publicProcedure.handler(async ({ context }) => {
+			const entries = await db.select().from(entry).orderBy(sql`RANDOM()`).limit(1);
+			return enrichEntriesWithRemoteData(entries, context);
+		}),
 
 		getById: publicProcedure
 			.input(entryIdSchema)
