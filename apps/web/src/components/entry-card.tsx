@@ -97,7 +97,9 @@ function EntryInteractions({ entry }: { entry: any }) {
 					<LucideArrowUp />
 				</Button>
 
-				<Button variant="ghost">{votesData?.entryScore ?? -1}</Button>
+				<p className="w-10 flex items-center justify-center">
+					{votesData?.entryScore}
+				</p>
 				<Button
 					onClick={() =>
 						votesData?.userVote < 0
