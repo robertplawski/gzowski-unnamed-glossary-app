@@ -1,5 +1,5 @@
 import { db } from "@gzowski-unnamed-glossary-app/db";
-import { eq, and, sum, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { protectedProcedure, publicProcedure } from "../index";
 import {
 	entry,

@@ -1,7 +1,6 @@
 import {
 	LucideArrowDown,
 	LucideArrowUp,
-	LucideCloud,
 	LucideFlag,
 	LucideMessageCircle,
 	LucideVolume2,
