@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SuccessRouteImport } from './routes/success'
-import { Route as RandomRouteImport } from './routes/random'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GlossaryRouteImport } from './routes/glossary'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -19,11 +18,6 @@ import { Route as IndexRouteImport } from './routes/index'
 const SuccessRoute = SuccessRouteImport.update({
   id: '/success',
   path: '/success',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RandomRoute = RandomRouteImport.update({
-  id: '/random',
-  path: '/random',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -52,7 +46,6 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
-  '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
 }
 export interface FileRoutesByTo {
@@ -60,7 +53,6 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
-  '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
 }
 export interface FileRoutesById {
@@ -69,28 +61,14 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
-  '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/dashboard'
-    | '/glossary'
-    | '/login'
-    | '/random'
-    | '/success'
+  fullPaths: '/' | '/dashboard' | '/glossary' | '/login' | '/success'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/glossary' | '/login' | '/random' | '/success'
-  id:
-    | '__root__'
-    | '/'
-    | '/dashboard'
-    | '/glossary'
-    | '/login'
-    | '/random'
-    | '/success'
+  to: '/' | '/dashboard' | '/glossary' | '/login' | '/success'
+  id: '__root__' | '/' | '/dashboard' | '/glossary' | '/login' | '/success'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -98,7 +76,6 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   GlossaryRoute: typeof GlossaryRoute
   LoginRoute: typeof LoginRoute
-  RandomRoute: typeof RandomRoute
   SuccessRoute: typeof SuccessRoute
 }
 
@@ -109,13 +86,6 @@ declare module '@tanstack/react-router' {
       path: '/success'
       fullPath: '/success'
       preLoaderRoute: typeof SuccessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/random': {
-      id: '/random'
-      path: '/random'
-      fullPath: '/random'
-      preLoaderRoute: typeof RandomRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -154,7 +124,6 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   GlossaryRoute: GlossaryRoute,
   LoginRoute: LoginRoute,
-  RandomRoute: RandomRoute,
   SuccessRoute: SuccessRoute,
 }
 export const routeTree = rootRouteImport
