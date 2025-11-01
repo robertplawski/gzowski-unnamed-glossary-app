@@ -66,11 +66,13 @@ async function getRemoteTranslation(word: string, context: any) {
 
 // Helper function to get remote dictionary entry
 async function getRemoteDictionaryEntry(word: string, context: any) {
-	// Check cache first
-	const cachedData = await context.env.WORD_CACHE.get(word);
-	if (cachedData) {
-		return JSON.parse(cachedData);
-	}
+	try {
+		// Check cache first
+		const cachedData = await context.env.WORD_CACHE.get(word);
+		if (cachedData && JSON.parse(cachedData)) {
+			return JSON.parse(cachedData);
+		}
+	} catch (e) {}
 
 	// Fetch from API if not in cache
 	const response = await fetch(
@@ -87,6 +89,7 @@ async function getRemoteDictionaryEntry(word: string, context: any) {
 	// Check if response is OK and content type is JSON
 	if (!response.ok) {
 		console.warn(`API returned ${response.status} for word: ${word}`);
+		await context.env.WORD_CACHE.put(word, JSON.stringify({}));
 		return null;
 	}
 	const dictionaryData = await response.json();
@@ -104,9 +107,13 @@ async function enrichEntriesWithRemoteData(entries: any[], context: any) {
 			.filter((_, index) => index < 10) // MAX 10
 			.map(async (entry) => ({
 				...entry,
-				translation: await getRemoteTranslation(entry.word, context),
+				word: handleWordEdgeCases(entry.word),
+				translation: await getRemoteTranslation(
+					handleWordEdgeCases(entry.word),
+					context,
+				),
 				remoteDictionaryEntry: await getRemoteDictionaryEntry(
-					entry.word,
+					handleWordEdgeCases(entry.word),
 					context,
 				),
 			})),
@@ -273,6 +280,10 @@ function extractVocabularyEntries(parsedJson: ImportJson): {
 	}
 
 	return entries;
+}
+
+function handleWordEdgeCases(word: string) {
+	return word.replace("sth", "something").replace("sb", "somebody");
 }
 
 export const dictionaryRouter = {

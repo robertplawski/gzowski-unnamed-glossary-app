@@ -10,7 +10,6 @@ import {
 	CardTitle,
 } from "./ui/card";
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
 
 function EntryPronunciation({ entry }: { entry: any }) {
 	// Create a audio context please to be sure that only one audio can play at a time
@@ -71,7 +70,9 @@ export function EntryCard({ entry }: { entry: any }) {
 			<CardContent className="grid gap-4">
 				{entry.translation && (
 					<div>
-						<h3 className="font-semibold text-foreground">Translation:</h3>
+						<h3 className="font-semibold text-foreground">
+							Automatic translation:
+						</h3>
 						<p className="text-foreground">
 							{[
 								entry.translation.translatedText,
@@ -99,11 +100,7 @@ export function EntryCard({ entry }: { entry: any }) {
 					<a className="underline" href="https://dictionaryapi.dev">
 						dictionaryapi.dev
 					</a>{" "}
-					<p> | Translation provided by</p>
-					<a className="underline" href="https://libretranslate.com">
-						libretranslate.com
-					</a>{" "}
-					<p>If you can afford it, please donate to these awesome projects.</p>
+					<p>| If you can afford it, please donate.</p>
 				</div>
 			</CardFooter>
 		</Card>
