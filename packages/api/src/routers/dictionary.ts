@@ -1,11 +1,12 @@
 import { publicProcedure, protectedProcedure } from "../index";
-import { eq, or, sql, like } from "drizzle-orm";
+import { eq, or, sql, like, desc } from "drizzle-orm";
 import { ORPCError, type RouterClient } from "@orpc/server";
 import { db } from "@gzowski-unnamed-glossary-app/db";
 
 import {
 	dictionary,
 	entry,
+	entryVote,
 } from "@gzowski-unnamed-glossary-app/db/schema/dictionary";
 import { auth } from "@gzowski-unnamed-glossary-app/auth";
 import { z } from "zod";
@@ -331,6 +332,23 @@ export const dictionaryRouter = {
 			}),
 		getAll: publicProcedure.handler(async ({ context }) => {
 			const entries = await db.select().from(entry).all();
+			return enrichEntriesWithRemoteData(entries, context);
+		}),
+		getSortedByVotes: publicProcedure.handler(async ({ context }) => {
+			// Get entries with vote counts using a join
+			const entriesWithVoteCounts = await db
+				.select({
+					entry: entry,
+					voteCount: sql<number>`SUM(${entryVote.value})`.as("voteCount"),
+				})
+				.from(entry)
+				.leftJoin(entryVote, eq(entry.id, entryVote.entryId))
+				.groupBy(entry.id)
+				.orderBy(desc(sql`voteCount`))
+				.all();
+
+			// Extract just the entries for enrichment
+			const entries = entriesWithVoteCounts.map((row) => row.entry);
 			return enrichEntriesWithRemoteData(entries, context);
 		}),
 		getRandom: publicProcedure.handler(async ({ context }) => {

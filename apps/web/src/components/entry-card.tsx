@@ -17,8 +17,8 @@ import {
 	CardTitle,
 } from "./ui/card";
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@/utils/orpc";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { orpc, queryClient } from "@/utils/orpc";
 import { useNavigate } from "@tanstack/react-router";
 
 // make entry context please
@@ -26,7 +26,6 @@ import { useNavigate } from "@tanstack/react-router";
 function EntryInteractions({ entry }: { entry: any }) {
 	const navigate = useNavigate();
 	const handleAuthRedirect = () => navigate({ to: "/login", throw: true });
-	const queryClient = useQueryClient();
 	const { data: comments, isLoading: commentsLoading } = useQuery(
 		orpc.comment.getByEntry.queryOptions({ input: { entryId: entry.id } }),
 	);
@@ -46,6 +45,9 @@ function EntryInteractions({ entry }: { entry: any }) {
 						input: { entryId: entry.id },
 					}).queryKey,
 				});
+				queryClient.invalidateQueries({
+					queryKey: orpc.entry.getSortedByVotes.queryOptions().queryKey,
+				});
 			},
 			onError: (error) => {
 				handleAuthRedirect(error);
@@ -60,6 +62,9 @@ function EntryInteractions({ entry }: { entry: any }) {
 					queryKey: orpc.entryVote.getVote.queryOptions({
 						input: { entryId: entry.id },
 					}).queryKey,
+				});
+				queryClient.invalidateQueries({
+					queryKey: orpc.entry.getSortedByVotes.queryOptions().queryKey,
 				});
 			},
 			onError: (error) => {
