@@ -7,9 +7,10 @@ import {
 	user,
 	moderator,
 } from "@gzowski-unnamed-glossary-app/auth/lib/permissions";
+import getServerUrl from "@/utils/getServerUrl";
 
 export const authClient = createAuthClient({
-	baseURL: import.meta.env.VITE_SERVER_URL,
+	baseURL: getServerUrl(),
 	plugins: [
 		polarClient(),
 		adminClient({

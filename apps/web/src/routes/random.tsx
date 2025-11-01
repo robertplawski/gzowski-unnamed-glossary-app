@@ -30,7 +30,7 @@ function RouteComponent() {
 						variant="secondary"
 						onClick={() => refetch()}
 					>
-						{!(isLoading || isRefetching) ? (
+						{!isLoading ? (
 							<>
 								<Clover />
 								I'm feeling lucky

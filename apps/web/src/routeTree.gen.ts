@@ -14,6 +14,7 @@ import { Route as RandomRouteImport } from './routes/random'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GlossaryRouteImport } from './routes/glossary'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ChallengingRouteImport } from './routes/challenging'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SuccessRoute = SuccessRouteImport.update({
@@ -41,6 +42,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChallengingRoute = ChallengingRouteImport.update({
+  id: '/challenging',
+  path: '/challenging',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -49,6 +55,7 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/challenging': typeof ChallengingRoute
   '/dashboard': typeof DashboardRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/challenging': typeof ChallengingRoute
   '/dashboard': typeof DashboardRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/challenging': typeof ChallengingRoute
   '/dashboard': typeof DashboardRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
@@ -76,16 +85,25 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/challenging'
     | '/dashboard'
     | '/glossary'
     | '/login'
     | '/random'
     | '/success'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/glossary' | '/login' | '/random' | '/success'
+  to:
+    | '/'
+    | '/challenging'
+    | '/dashboard'
+    | '/glossary'
+    | '/login'
+    | '/random'
+    | '/success'
   id:
     | '__root__'
     | '/'
+    | '/challenging'
     | '/dashboard'
     | '/glossary'
     | '/login'
@@ -95,6 +113,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChallengingRoute: typeof ChallengingRoute
   DashboardRoute: typeof DashboardRoute
   GlossaryRoute: typeof GlossaryRoute
   LoginRoute: typeof LoginRoute
@@ -139,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/challenging': {
+      id: '/challenging'
+      path: '/challenging'
+      fullPath: '/challenging'
+      preLoaderRoute: typeof ChallengingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -151,6 +177,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChallengingRoute: ChallengingRoute,
   DashboardRoute: DashboardRoute,
   GlossaryRoute: GlossaryRoute,
   LoginRoute: LoginRoute,
