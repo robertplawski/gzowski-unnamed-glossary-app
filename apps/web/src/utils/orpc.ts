@@ -4,6 +4,7 @@ import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { AppRouterClient } from "@gzowski-unnamed-glossary-app/api/routers/index";
+import getServerUrl from "./getServerUrl";
 
 export const queryClient = new QueryClient({
 	queryCache: new QueryCache({
@@ -21,7 +22,7 @@ export const queryClient = new QueryClient({
 });
 
 export const link = new RPCLink({
-	url: `${import.meta.env.VITE_SERVER_URL}/rpc`,
+	url: `${getServerUrl()}/rpc`,
 	fetch(url, options) {
 		return fetch(url, {
 			...options,

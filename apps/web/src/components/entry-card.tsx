@@ -1,15 +1,142 @@
-import { LucideVolume2 } from "lucide-react";
+import {
+	LucideArrowDown,
+	LucideArrowUp,
+	LucideCloud,
+	LucideFlag,
+	LucideMessageCircle,
+	LucideVolume2,
+} from "lucide-react";
 import { DictionaryEntry } from "./dictionary-entry";
 import { Button } from "./ui/button";
 import {
 	Card,
+	CardAction,
 	CardContent,
 	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "./ui/card";
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { orpc, queryClient } from "@/utils/orpc";
+import { useNavigate } from "@tanstack/react-router";
+
+// make entry context please
+//
+function EntryInteractions({ entry }: { entry: any }) {
+	const navigate = useNavigate();
+	const handleAuthRedirect = () => navigate({ to: "/login", throw: true });
+	const { data: comments, isLoading: commentsLoading } = useQuery(
+		orpc.comment.getByEntry.queryOptions({ input: { entryId: entry.id } }),
+	);
+
+	const { data: votesData, isLoading: votesLoading } = useQuery(
+		orpc.entryVote.getVote.queryOptions({
+			input: { entryId: entry.id },
+		}),
+	);
+
+	const { mutate: vote } = useMutation(
+		orpc.entryVote.vote.mutationOptions({
+			onSuccess: () => {
+				// Invalidate the vote query to refetch the data
+				queryClient.invalidateQueries({
+					queryKey: orpc.entryVote.getVote.queryOptions({
+						input: { entryId: entry.id },
+					}).queryKey,
+				});
+				queryClient.invalidateQueries({
+					queryKey: orpc.entry.getSortedByVotes.queryOptions().queryKey,
+				});
+			},
+			onError: (error) => {
+				handleAuthRedirect(error);
+			},
+		}),
+	);
+	const { mutate: resetVote } = useMutation(
+		orpc.entryVote.resetVote.mutationOptions({
+			onSuccess: () => {
+				// Invalidate the vote query to refetch the data
+				queryClient.invalidateQueries({
+					queryKey: orpc.entryVote.getVote.queryOptions({
+						input: { entryId: entry.id },
+					}).queryKey,
+				});
+				queryClient.invalidateQueries({
+					queryKey: orpc.entry.getSortedByVotes.queryOptions().queryKey,
+				});
+			},
+			onError: (error) => {
+				handleAuthRedirect(error);
+			},
+		}),
+	);
+
+	if (commentsLoading || votesLoading || !votesData) {
+		return (
+			<CardFooter>
+				<CardAction className="flex flex-row gap-2">
+					<Button variant={"outline"}>
+						<LucideArrowUp />
+					</Button>
+
+					<Button variant="ghost">0</Button>
+					<Button variant="outline">
+						<LucideArrowDown />
+					</Button>
+					<Button variant="outline">
+						<LucideMessageCircle /> 0 Comments
+					</Button>
+
+					<Button variant="outline">
+						<LucideFlag />
+						Report
+					</Button>
+				</CardAction>{" "}
+			</CardFooter>
+		);
+	}
+	return (
+		<CardFooter>
+			<CardAction className="flex items-center flex-row gap-2">
+				<Button
+					variant={votesData?.userVote > 0 ? "default" : "outline"}
+					onClick={() =>
+						votesData?.userVote > 0
+							? resetVote({ entryId: entry.id })
+							: vote({ entryId: entry.id, value: 1 })
+					}
+				>
+					<LucideArrowUp />
+				</Button>
+
+				<p className="w-10 flex items-center justify-center">
+					{votesData?.entryScore}
+				</p>
+				<Button
+					onClick={() =>
+						votesData?.userVote < 0
+							? resetVote({ entryId: entry.id })
+							: vote({ entryId: entry.id, value: -1 })
+					}
+					variant={votesData?.userVote < 0 ? "default" : "outline"}
+				>
+					<LucideArrowDown />
+				</Button>
+				<Button variant="outline">
+					<LucideMessageCircle /> {comments?.length} Comments
+				</Button>
+
+				<div className="flex-1" />
+				<Button variant="outline">
+					<LucideFlag />
+					Report
+				</Button>
+			</CardAction>{" "}
+		</CardFooter>
+	);
+}
 
 function EntryPronunciation({ entry }: { entry: any }) {
 	// Create a audio context please to be sure that only one audio can play at a time
@@ -98,6 +225,7 @@ export function EntryCard({ entry }: { entry: any }) {
 					<p>If you can afford it, please donate to these awesome projects.</p>
 				</div>
 			</CardFooter>
+			<EntryInteractions entry={entry} />
 		</Card>
 	);
 }
