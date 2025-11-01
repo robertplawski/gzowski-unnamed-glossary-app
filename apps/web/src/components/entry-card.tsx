@@ -19,10 +19,13 @@ import {
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/utils/orpc";
+import { useNavigate } from "@tanstack/react-router";
 
 // make entry context please
 //
 function EntryInteractions({ entry }: { entry: any }) {
+	const navigate = useNavigate();
+	const handleAuthRedirect = () => navigate({ to: "/login", throw: true });
 	const queryClient = useQueryClient();
 	const { data: comments, isLoading: commentsLoading } = useQuery(
 		orpc.comment.getByEntry.queryOptions({ input: { entryId: entry.id } }),
@@ -44,6 +47,9 @@ function EntryInteractions({ entry }: { entry: any }) {
 					}).queryKey,
 				});
 			},
+			onError: (error) => {
+				handleAuthRedirect(error);
+			},
 		}),
 	);
 	const { mutate: resetVote } = useMutation(
@@ -56,6 +62,9 @@ function EntryInteractions({ entry }: { entry: any }) {
 					}).queryKey,
 				});
 			},
+			onError: (error) => {
+				handleAuthRedirect(error);
+			},
 		}),
 	);
 
@@ -63,7 +72,7 @@ function EntryInteractions({ entry }: { entry: any }) {
 		return (
 			<CardFooter>
 				<CardAction className="flex flex-row gap-2">
-					<Button variant={"ghost"}>
+					<Button variant={"outline"}>
 						<LucideArrowUp />
 					</Button>
 

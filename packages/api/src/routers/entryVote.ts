@@ -1,6 +1,6 @@
 import { db } from "@gzowski-unnamed-glossary-app/db";
 import { eq, and, sum, sql } from "drizzle-orm";
-import { protectedProcedure } from "../index";
+import { protectedProcedure, publicProcedure } from "../index";
 import {
 	entry,
 	entryVote,
@@ -141,7 +141,7 @@ export const entryVoteRouter = {
 
 				return { success: true };
 			}),
-		getVote: protectedProcedure
+		getVote: publicProcedure
 			.input(
 				z.object({
 					entryId: z.string().uuid(),
@@ -149,17 +149,6 @@ export const entryVoteRouter = {
 			)
 			.output(getVoteOutputSchema)
 			.handler(async ({ input: { entryId }, context }) => {
-				const userId = context.session.user.id;
-
-				// Get user's vote for this entry
-				const userVote = await db
-					.select({ value: entryVote.value })
-					.from(entryVote)
-					.where(
-						and(eq(entryVote.entryId, entryId), eq(entryVote.userId, userId)),
-					)
-					.get();
-
 				// Get total vote count and score for the entry
 				const voteStats = await db
 					.select({
@@ -176,6 +165,24 @@ export const entryVoteRouter = {
 					.select({ score: entry.score })
 					.from(entry)
 					.where(eq(entry.id, entryId))
+					.get();
+				if (!context?.session?.user.id) {
+					return {
+						userVote: null, // null if user hasn't voted
+						totalVotes: voteStats?.totalVotes || 0,
+						totalScore: voteStats?.totalScore || 0,
+						entryScore: entryInfo?.score || 0,
+					};
+				}
+				const userId = context.session.user.id;
+
+				// Get user's vote for this entry
+				const userVote = await db
+					.select({ value: entryVote.value })
+					.from(entryVote)
+					.where(
+						and(eq(entryVote.entryId, entryId), eq(entryVote.userId, userId)),
+					)
 					.get();
 
 				return {
