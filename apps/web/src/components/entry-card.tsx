@@ -61,7 +61,7 @@ function EntryInteractions({ entry }: { entry: any }) {
 						return {
 							...old,
 							userVote: value,
-							entryScore: old.entryScore + scoreDiff,
+							totalScore: old.totalScore + scoreDiff,
 						};
 					},
 				);
@@ -123,7 +123,7 @@ function EntryInteractions({ entry }: { entry: any }) {
 						return {
 							...old,
 							userVote: 0,
-							entryScore: old.entryScore + scoreDiff,
+							totalScore: old.totalScore + scoreDiff,
 						};
 					},
 				);
