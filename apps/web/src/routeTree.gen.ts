@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WotdRouteImport } from './routes/wotd'
 import { Route as SuccessRouteImport } from './routes/success'
 import { Route as RandomRouteImport } from './routes/random'
 import { Route as LoginRouteImport } from './routes/login'
@@ -17,6 +18,11 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ChallengingRouteImport } from './routes/challenging'
 import { Route as IndexRouteImport } from './routes/index'
 
+const WotdRoute = WotdRouteImport.update({
+  id: '/wotd',
+  path: '/wotd',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SuccessRoute = SuccessRouteImport.update({
   id: '/success',
   path: '/success',
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
+  '/wotd': typeof WotdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
+  '/wotd': typeof WotdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
+  '/wotd': typeof WotdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/random'
     | '/success'
+    | '/wotd'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/random'
     | '/success'
+    | '/wotd'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/random'
     | '/success'
+    | '/wotd'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,10 +131,18 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RandomRoute: typeof RandomRoute
   SuccessRoute: typeof SuccessRoute
+  WotdRoute: typeof WotdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wotd': {
+      id: '/wotd'
+      path: '/wotd'
+      fullPath: '/wotd'
+      preLoaderRoute: typeof WotdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/success': {
       id: '/success'
       path: '/success'
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RandomRoute: RandomRoute,
   SuccessRoute: SuccessRoute,
+  WotdRoute: WotdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
