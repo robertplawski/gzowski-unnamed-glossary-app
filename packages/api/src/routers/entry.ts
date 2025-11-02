@@ -256,7 +256,21 @@ export const entryRouter = {
 				.limit(1);
 			return enrichEntriesWithRemoteData(entries, context);
 		}),
+		getDaily: publicProcedure.handler(async ({ context }) => {
+			const words = await db
+				.select()
+				.from(entry)
+				.where(
+					sql`${entry.id} = (
+    SELECT id FROM ${entry}
+    ORDER BY abs((id * 31) + cast(strftime('%Y%m%d', 'now') AS INTEGER))
+    LIMIT 1
+  )`,
+				)
+				.limit(1);
 
+			return enrichEntriesWithRemoteData(words, context);
+		}),
 		getById: publicProcedure
 			.input(entryIdSchema)
 			.handler(async ({ input: { id }, context }) => {
