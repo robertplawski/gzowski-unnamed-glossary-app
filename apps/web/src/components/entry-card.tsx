@@ -9,6 +9,7 @@ import {
 	LucideChevronUp,
 	ChevronDown,
 	ChevronUp,
+	AlertCircle,
 } from "lucide-react";
 import { DictionaryEntry } from "./dictionary-entry";
 import { Button } from "./ui/button";
@@ -387,13 +388,19 @@ export function EntryCard({ entry }: { entry: any }) {
 						<p className="text-muted-foreground italic">{entry.example}</p>
 					</div>
 				)}
-				<Button
-					variant={"outline"}
-					onClick={() => setShowDefinitions((v) => !v)}
-				>
-					{showDefinitions ? <ChevronUp /> : <ChevronDown />}
-					<span>{showDefinitions ? "Hide" : "Show"} definition</span>
-				</Button>
+				{entry.remoteDictionaryEntry?.meanings ? (
+					<Button
+						variant={"outline"}
+						onClick={() => setShowDefinitions((v) => !v)}
+					>
+						{showDefinitions ? <ChevronUp /> : <ChevronDown />}
+						<span>{showDefinitions ? "Hide" : "Show"} definition</span>
+					</Button>
+				) : (
+					<Button disabled>
+						<AlertCircle /> Definition unavailable, look for comments
+					</Button>
+				)}
 				{showDefinitions && entry.remoteDictionaryEntry && (
 					<DictionaryEntry entry={entry} />
 				)}
