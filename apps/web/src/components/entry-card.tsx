@@ -7,6 +7,8 @@ import {
 	LucideSend,
 	LucideChevronDown,
 	LucideChevronUp,
+	ChevronDown,
+	ChevronUp,
 } from "lucide-react";
 import { DictionaryEntry } from "./dictionary-entry";
 import { Button } from "./ui/button";
@@ -362,6 +364,7 @@ function EntryPronunciation({ entry }: { entry: any }) {
 }
 
 export function EntryCard({ entry }: { entry: any }) {
+	const [showDefinitions, setShowDefinitions] = useState(false);
 	return (
 		<Card key={entry.id} className="w-full">
 			<CardHeader>
@@ -384,8 +387,16 @@ export function EntryCard({ entry }: { entry: any }) {
 						<p className="text-muted-foreground italic">{entry.example}</p>
 					</div>
 				)}
-
-				{entry.remoteDictionaryEntry && <DictionaryEntry entry={entry} />}
+				<Button
+					variant={"outline"}
+					onClick={() => setShowDefinitions((v) => !v)}
+				>
+					{showDefinitions ? <ChevronUp /> : <ChevronDown />}
+					<span>{showDefinitions ? "Hide" : "Show"} definition</span>
+				</Button>
+				{showDefinitions && entry.remoteDictionaryEntry && (
+					<DictionaryEntry entry={entry} />
+				)}
 			</CardContent>
 			<CardFooter>
 				<div className="flex flex-row flex-wrap gap-1 text-muted-foreground">
@@ -394,11 +405,6 @@ export function EntryCard({ entry }: { entry: any }) {
 					<a className="underline" href="https://dictionaryapi.dev">
 						dictionaryapi.dev
 					</a>{" "}
-					<p> | Translation provided by</p>
-					<a className="underline" href="https://libretranslate.com">
-						libretranslate.com
-					</a>{" "}
-					<p>If you can afford it, please donate to these awesome projects.</p>
 				</div>
 			</CardFooter>
 			<EntryInteractions entry={entry} />
