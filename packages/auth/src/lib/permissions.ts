@@ -8,6 +8,8 @@ const statement = {
 	comment: ["create", "update", "delete"],
 } as const;
 
+export const StatementType = typeof statement;
+
 export const ac = createAccessControl(statement);
 
 export const user = ac.newRole({

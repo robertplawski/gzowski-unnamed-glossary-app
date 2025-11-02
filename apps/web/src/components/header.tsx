@@ -1,15 +1,13 @@
-import {Link} from "@tanstack/react-router";
-import {ModeToggle} from "./mode-toggle";
+import { Link } from "@tanstack/react-router";
+import { ModeToggle } from "./mode-toggle";
 import UserMenu from "./user-menu";
-import {useScrollPosition} from "./hooks/useScrollPosition"; // adjust path as needed
+import { useScrollPosition } from "./hooks/useScrollPosition"; // adjust path as needed
 import GUGAIcon from "../../public/union-jack.svg";
-import {getNavLinks} from "./nav-links";
-import {useIsAuthorized} from "@/hooks/use-is-authorized";
+import useNavLinks from "./hooks/useNavLinks";
 
 export default function Header() {
-	const {isScrolled} = useScrollPosition();
-	const {isAuthorized} = useIsAuthorized();
-	const links = getNavLinks(isAuthorized);
+	const { isScrolled } = useScrollPosition();
+	const { navLinks: links, loading } = useNavLinks();
 
 	return (
 		<header
@@ -17,7 +15,8 @@ export default function Header() {
 				isScrolled
 					? "border-b border-outline backdrop-blur-sm bg-background/60 px-4 py-2"
 					: "px-4 py-3 md:px-6 md:py-4"
-			}`}>
+			}`}
+		>
 			<div className="max-w-6xl w-full flex items-center justify-between">
 				{/* Left: Logo + Title */}
 				<Link className="flex flex-row gap-3 items-center" to={"/"}>
@@ -31,19 +30,22 @@ export default function Header() {
 				</Link>
 
 				{/* Center: Top navigation (desktop only) */}
-				<nav className="hidden md:flex gap-2 md:gap-4 items-center justify-center flex-1">
-					{links.map(({to, label, icon: Icon}) => {
-						return (
-							<Link
-								key={to}
-								to={to as unknown as any}
-								className="flex p-2 flex-row cursor-pointer gap-2 items-center hover:text-foreground transition-colors">
-								<Icon size={20} />
-								<p className="hidden lg:block">{label}</p>
-							</Link>
-						);
-					})}
-				</nav>
+				{!loading && (
+					<nav className="hidden md:flex gap-2 md:gap-4 items-center justify-center flex-1">
+						{links.map(({ to, label, icon: Icon }) => {
+							return (
+								<Link
+									key={to}
+									to={to as unknown as any}
+									className="flex p-2 flex-row cursor-pointer gap-2 items-center hover:text-foreground transition-colors"
+								>
+									<Icon size={20} />
+									<p className="hidden lg:block">{label}</p>
+								</Link>
+							);
+						})}
+					</nav>
+				)}
 
 				{/* Right: Controls */}
 				<div className="flex items-center gap-2">
