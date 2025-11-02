@@ -105,7 +105,7 @@ function RouteComponent() {
 					<div>
 						<div className="grid gap-4">
 							{displayData.map((entry) => (
-								<EntryCard key={entry.id || entry.word} entry={entry} />
+								<EntryCard key={entry.id} entry={entry} />
 							))}
 						</div>
 						{debouncedSearchTerm.length > 0 && (

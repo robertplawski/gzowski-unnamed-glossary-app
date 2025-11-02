@@ -29,7 +29,6 @@ const getVoteOutputSchema = z.object({
 	userVote: z.number().nullable(),
 	totalVotes: z.number(),
 	totalScore: z.number(),
-	entryScore: z.number(),
 });
 
 export const entryVoteRouter = {
@@ -157,7 +156,6 @@ export const entryVoteRouter = {
 					})
 					.from(entryVote)
 					.where(eq(entryVote.entryId, entryId))
-					.groupBy(entryVote.entryId)
 					.get();
 
 				// Get entry information
@@ -166,14 +164,15 @@ export const entryVoteRouter = {
 					.from(entry)
 					.where(eq(entry.id, entryId))
 					.get();
-				if (!context?.session?.user.id) {
+
+				if (!context?.session?.user?.id) {
 					return {
 						userVote: null, // null if user hasn't voted
 						totalVotes: voteStats?.totalVotes || 0,
 						totalScore: voteStats?.totalScore || 0,
-						entryScore: entryInfo?.score || 0,
 					};
 				}
+
 				const userId = context.session.user.id;
 
 				// Get user's vote for this entry
@@ -191,9 +190,7 @@ export const entryVoteRouter = {
 					totalScore: voteStats?.totalScore || 0,
 					entryScore: entryInfo?.score || 0,
 				};
-			}), // Authenticated users can vote on entries
-
-		// Authenticated users can remove their vote
+			}), // Authenticated users can remove their vote
 		removeVote: protectedProcedure
 			.input(entryVoteDeleteSchema)
 			.handler(async ({ input: { entryId }, context }) => {
