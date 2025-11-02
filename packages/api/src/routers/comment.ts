@@ -1,5 +1,5 @@
 import { db } from "@gzowski-unnamed-glossary-app/db";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { protectedProcedure, publicProcedure } from "../index";
 import { ORPCError, type RouterClient } from "@orpc/server";
 import {
@@ -9,6 +9,7 @@ import {
 import z from "zod";
 import { auth } from "@gzowski-unnamed-glossary-app/auth";
 import { randomUUID } from "crypto";
+import { user } from "@gzowski-unnamed-glossary-app/db/schema/auth";
 
 // ===== Comment Schemas =====
 const commentCreateSchema = z.object({
@@ -59,12 +60,21 @@ export const commentRouter = {
 			.input(commentsByEntrySchema)
 			.handler(async ({ input: { entryId } }) => {
 				return db
-					.select()
+					.select({
+						id: comment.id,
+						text: comment.text,
+						entryId: comment.entryId,
+						userId: comment.userId,
+						createdAt: comment.createdAt,
+						updatedAt: comment.updatedAt,
+						user,
+					})
 					.from(comment)
+					.leftJoin(user, eq(comment.userId, user.id))
 					.where(eq(comment.entryId, entryId))
+					.orderBy(desc(comment.createdAt))
 					.all();
 			}),
-
 		// Authenticated users can create comments
 		create: protectedProcedure
 			.input(commentCreateSchema)

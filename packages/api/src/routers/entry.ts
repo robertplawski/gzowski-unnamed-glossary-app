@@ -130,7 +130,7 @@ async function getRemoteDictionaryEntry(word: string, context: any) {
 			return null;
 		}
 		const dictionaryData = await response.json();
-		const remoteData = dictionaryData as any[0];
+		const remoteData = dictionaryData[0];
 
 		// Cache for future use
 		await context.env.WORD_CACHE.put(word, JSON.stringify(remoteData));
