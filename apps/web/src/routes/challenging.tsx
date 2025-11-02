@@ -8,7 +8,7 @@ export const Route = createFileRoute("/challenging")({
 });
 
 function RouteComponent() {
-	const { data, isLoading, isRefetching, error } = useQuery({
+	const { data, isLoading, error } = useQuery({
 		...orpc.entry.getSortedByVotes.queryOptions(),
 	});
 
@@ -30,7 +30,7 @@ function RouteComponent() {
 				) : (
 					<div className="flex flex-col w-full gap-4">
 						{data?.map((entry) => (
-							<EntryCard key={entry.id || entry.word} entry={entry} />
+							<EntryCard key={entry.id} entry={entry} />
 						))}
 					</div>
 				)}
