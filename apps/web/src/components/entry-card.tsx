@@ -196,7 +196,7 @@ function EntryInteractions({ entry }: { entry: any }) {
 				</Button>
 
 				<p className="w-10 flex items-center justify-center">
-					{votesData?.entryScore}
+					{votesData?.entryScore ?? 0}
 				</p>
 				<Button
 					onClick={() =>

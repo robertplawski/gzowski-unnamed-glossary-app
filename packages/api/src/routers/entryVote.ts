@@ -208,7 +208,11 @@ export const entryVoteRouter = {
 					.get();
 
 				if (existingVote) {
-					await db.delete(entryVote).where(eq(entryVote.id, existingVote.id));
+					const timestamp = new Date();
+					await db
+						.update(entryVote)
+						.set({ value: 0, updatedAt: timestamp })
+						.where(eq(entryVote.id, existingVote.id));
 
 					// Update entry score
 					const currentEntry = await db

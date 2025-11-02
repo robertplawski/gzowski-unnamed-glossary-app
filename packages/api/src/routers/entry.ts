@@ -1,4 +1,4 @@
-import { eq, or, sql, like, desc } from "drizzle-orm";
+import { eq, or, sql, like, desc, gt } from "drizzle-orm";
 import {
 	entry,
 	entryVote,
@@ -235,12 +235,13 @@ export const entryRouter = {
 			const entriesWithVoteCounts = await db
 				.select({
 					entry: entry,
-					voteCount: sql<number>`SUM(${entryVote.value})`.as("voteCount"),
+					voteCount: sql<number>`SUM(${entryVote.value})`.as("voteTotal"),
 				})
 				.from(entry)
 				.leftJoin(entryVote, eq(entry.id, entryVote.entryId))
 				.groupBy(entry.id)
-				.orderBy(desc(sql`voteCount`))
+				.having(gt(sql`voteTotal`, 0))
+				.orderBy(desc(sql`voteTotal`))
 				.all();
 
 			// Extract just the entries for enrichment
