@@ -247,12 +247,13 @@ function EntryInteractions({ entry }: { entry: any }) {
 						<LucideArrowDown />
 					</Button>
 					<Button variant="outline">
-						<LucideMessageCircle /> 0 Comments
+						<LucideMessageCircle /> 0
+						<span className="hidden sm:block">Comments</span>
 					</Button>
 
 					<Button variant="outline">
 						<LucideFlag />
-						Report
+						<span className="hidden sm:block">Report</span>
 					</Button>
 				</CardAction>
 			</CardFooter>
@@ -292,7 +293,8 @@ function EntryInteractions({ entry }: { entry: any }) {
 						onClick={() => setShowComments(!showComments)}
 					>
 						<LucideMessageCircle />
-						{comments?.length || 0} Comments
+						{comments?.length || 0}
+						<span className="hidden sm:block">Comments</span>
 						{showComments ? (
 							<LucideChevronUp className="ml-1 h-4 w-4" />
 						) : (
@@ -303,7 +305,8 @@ function EntryInteractions({ entry }: { entry: any }) {
 					<div className="flex-1" />
 					<Button variant="outline">
 						<LucideFlag />
-						Report
+
+						<span className="hidden sm:block">Report</span>
 					</Button>
 				</CardAction>
 			</CardFooter>
@@ -407,11 +410,7 @@ export function EntryCard({ entry }: { entry: any }) {
 			</CardContent>
 			<CardFooter>
 				<div className="flex flex-row flex-wrap gap-1 text-muted-foreground">
-					{entry.notes && <p>{entry.notes} | </p>}
-					<p> Dictionary entry provided by</p>
-					<a className="underline" href="https://dictionaryapi.dev">
-						dictionaryapi.dev
-					</a>{" "}
+					{entry.notes && <p>{entry.notes} </p>}
 				</div>
 			</CardFooter>
 			<EntryInteractions entry={entry} />

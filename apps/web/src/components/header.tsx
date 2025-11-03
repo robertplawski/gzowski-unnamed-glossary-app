@@ -4,10 +4,20 @@ import UserMenu from "./user-menu";
 import { useScrollPosition } from "./hooks/useScrollPosition"; // adjust path as needed
 import GUGAIcon from "../../public/union-jack.svg";
 import useNavLinks from "./hooks/useNavLinks";
+import { Button } from "./ui/button";
+import { LucideMenu } from "lucide-react";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 export default function Header() {
 	const { isScrolled } = useScrollPosition();
-	const { navLinks: links, loading } = useNavLinks();
+	const { quickNavLinks, otherNavLinks, loading } = useNavLinks(4);
 
 	return (
 		<header
@@ -32,7 +42,7 @@ export default function Header() {
 				{/* Center: Top navigation (desktop only) */}
 				{!loading && (
 					<nav className="hidden md:flex gap-2 md:gap-4 items-center justify-center flex-1">
-						{links.map(({ to, label, icon: Icon }) => {
+						{quickNavLinks.map(({ to, label, icon: Icon }) => {
 							return (
 								<Link
 									key={to}
@@ -46,9 +56,27 @@ export default function Header() {
 						})}
 					</nav>
 				)}
-
 				{/* Right: Controls */}
 				<div className="flex items-center gap-2">
+					<DropdownMenu>
+						<DropdownMenuTrigger className="hidden md:block" asChild>
+							<Button variant="outline">
+								<LucideMenu />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent className="bg-card">
+							<DropdownMenuLabel>More</DropdownMenuLabel>
+							<DropdownMenuSeparator />
+							{otherNavLinks.map(({ to, label, icon: Icon }) => (
+								<Link key={to} to={to as unknown as any}>
+									<DropdownMenuItem>
+										<Icon size={20} /> {label}
+									</DropdownMenuItem>
+								</Link>
+							))}
+						</DropdownMenuContent>
+					</DropdownMenu>
+
 					<ModeToggle />
 					<UserMenu />
 				</div>

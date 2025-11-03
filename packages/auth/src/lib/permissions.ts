@@ -26,6 +26,6 @@ export const moderator = ac.newRole({
 export const admin = ac.newRole({
 	...adminAc.statements,
 	dictionary: ["create", "update", "delete"],
-	entry: ["create", "update", "delete"],
-	comment: ["create", "update", "delete"],
+	entry: ["create", "update", "delete", "verify"],
+	comment: ["create", "update", "delete", "verify"],
 });
