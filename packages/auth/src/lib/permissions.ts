@@ -4,8 +4,8 @@ import { defaultStatements, adminAc } from "better-auth/plugins/admin/access";
 const statement = {
 	...defaultStatements,
 	dictionary: ["create", "update", "delete"],
-	entry: ["create", "update", "delete"],
-	comment: ["create", "update", "delete"],
+	entry: ["create", "update", "delete", "verify"],
+	comment: ["create", "update", "delete", "verify"],
 } as const;
 
 export const StatementType = typeof statement;
@@ -18,8 +18,8 @@ export const user = ac.newRole({
 });
 
 export const moderator = ac.newRole({
-	entry: ["create", "update", "delete"],
-	comment: ["create", "update", "delete"],
+	entry: ["create", "delete", "verify"],
+	comment: ["create", "delete", "verify"],
 	user: ["ban"],
 });
 
