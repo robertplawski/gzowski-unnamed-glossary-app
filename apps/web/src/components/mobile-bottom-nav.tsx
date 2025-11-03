@@ -42,7 +42,7 @@ export default function MobileBottomNav() {
 				<div
 					className={"w-full max-w-6xl grid overflow-scroll"}
 					style={{
-						gridTemplateColumns: `repeat(${quickNavLinks.length + 1}, minmax(0, 1fr))`,
+						gridTemplateColumns: `repeat(${quickNavLinks.length + (otherNavLinks.length > 0 ? 1 : 0)}, minmax(0, 1fr))`,
 					}}
 				>
 					{quickNavLinks.map(({ to, label, icon: Icon }) => {
@@ -61,20 +61,22 @@ export default function MobileBottomNav() {
 							</Link>
 						);
 					})}
-					<Button
-						variant={"ghost"}
-						onClick={() => setOpened((v) => !v)}
-						className={`h-full flex flex-col items-center justify-center gap-1.5 py-3 transition-colors transition-transform ${
-							isOpened ? "text-primary" : "text-muted-foreground"
-						} hover:text-foreground active:scale-[0.98]`}
-					>
-						{isOpened ? (
-							<LucideArrowDown size={22} />
-						) : (
-							<LucideArrowUp size={22} />
-						)}
-						<span>More</span>
-					</Button>
+					{otherNavLinks.length > 0 && (
+						<Button
+							variant={"ghost"}
+							onClick={() => setOpened((v) => !v)}
+							className={`h-full flex flex-col items-center justify-center gap-1.5 py-3 transition-colors transition-transform ${
+								isOpened ? "text-primary" : "text-muted-foreground"
+							} hover:text-foreground active:scale-[0.98]`}
+						>
+							{isOpened ? (
+								<LucideArrowDown size={22} />
+							) : (
+								<LucideArrowUp size={22} />
+							)}
+							<span>More</span>
+						</Button>
+					)}
 				</div>
 			)}
 		</nav>

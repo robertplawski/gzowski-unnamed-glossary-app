@@ -58,24 +58,26 @@ export default function Header() {
 				)}
 				{/* Right: Controls */}
 				<div className="flex items-center gap-2">
-					<DropdownMenu>
-						<DropdownMenuTrigger className="hidden md:block" asChild>
-							<Button variant="outline">
-								<LucideMenu />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent className="bg-card">
-							<DropdownMenuLabel>More</DropdownMenuLabel>
-							<DropdownMenuSeparator />
-							{otherNavLinks.map(({ to, label, icon: Icon }) => (
-								<Link key={to} to={to as unknown as any}>
-									<DropdownMenuItem>
-										<Icon size={20} /> {label}
-									</DropdownMenuItem>
-								</Link>
-							))}
-						</DropdownMenuContent>
-					</DropdownMenu>
+					{otherNavLinks.length > 0 && (
+						<DropdownMenu>
+							<DropdownMenuTrigger className="hidden md:block" asChild>
+								<Button variant="outline">
+									<LucideMenu />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent className="bg-card">
+								<DropdownMenuLabel>More</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								{otherNavLinks.map(({ to, label, icon: Icon }) => (
+									<Link key={to} to={to as unknown as any}>
+										<DropdownMenuItem>
+											<Icon size={20} /> {label}
+										</DropdownMenuItem>
+									</Link>
+								))}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					)}
 
 					<ModeToggle />
 					<UserMenu />
