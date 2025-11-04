@@ -1,9 +1,9 @@
-import { Input } from "@/components/ui/input";
-import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { orpc } from "@/utils/orpc";
-import { useQuery } from "@tanstack/react-query";
-import { EntryCard } from "@/components/entry-card";
+import {Input} from "@/components/ui/input";
+import {createFileRoute} from "@tanstack/react-router";
+import {useState, useEffect} from "react";
+import {orpc} from "@/utils/orpc";
+import {useQuery} from "@tanstack/react-query";
+import {EntryCard} from "@/components/entry-card";
 
 export const Route = createFileRoute("/glossary")({
 	component: RouteComponent,
@@ -31,7 +31,7 @@ function RouteComponent() {
 	const [searchTerm, setSearchTerm] = useState("");
 	const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-	// Use the search procedure for server-side searching
+	// Search procedure
 	const {
 		data: searchResults,
 		isLoading,
@@ -42,12 +42,14 @@ function RouteComponent() {
 				query: debouncedSearchTerm,
 				limit: 50,
 				offset: 0,
+				includeFuzzy: true,
+				includeSemantic: true,
 			},
 		}),
 		enabled: debouncedSearchTerm.length > 0, // Only search when there's a query
 	});
 
-	// Fetch all entries when no search term (optional - you might want to remove this)
+	// Fetch all entries when no search term (optional)
 	const {
 		data: allEntries,
 		isLoading: isLoadingAll,
@@ -62,6 +64,10 @@ function RouteComponent() {
 		debouncedSearchTerm.length > 0
 			? searchResults?.entries || []
 			: allEntries || [];
+
+	// Get search results with match information for enhanced display
+	const searchResultsWithMatchInfo =
+		debouncedSearchTerm.length > 0 ? searchResults : null;
 
 	const displayIsLoading =
 		debouncedSearchTerm.length > 0 ? isLoading : isLoadingAll;
@@ -109,12 +115,32 @@ function RouteComponent() {
 							))}
 						</div>
 						{debouncedSearchTerm.length > 0 && (
-							<p className="text-sm text-muted-foreground mb-4 mt-4">
-								Found {displayData.length} result(s)
-								{searchResults?.pagination &&
-									searchResults.pagination.total > displayData.length &&
-									` out of ${searchResults.pagination.total}`}
-							</p>
+							<div className="text-sm text-muted-foreground mb-4 mt-4 space-y-1">
+								<p>
+									Found {displayData.length} result(s)
+									{searchResults?.pagination &&
+										searchResults.pagination.total > displayData.length &&
+										` out of ${searchResults.pagination.total}`}
+								</p>
+								{searchResults?.searchStats && (
+									<div className="text-xs opacity-75">
+										<p>
+											Average score: {searchResults.searchStats.averageScore}
+										</p>
+										<p>
+											Match types:{" "}
+											{Object.entries(
+												searchResults.searchStats.matchTypeDistribution
+											)
+												.map(([type, count]) => `${type} (${count})`)
+												.join(", ")}
+										</p>
+										<p>
+											Search time: {searchResults.searchStats.executionTime}ms
+										</p>
+									</div>
+								)}
+							</div>
 						)}
 					</div>
 				)}
