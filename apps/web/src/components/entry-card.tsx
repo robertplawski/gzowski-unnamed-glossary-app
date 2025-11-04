@@ -394,11 +394,11 @@ export function EntryCard({entry}: {entry: any}) {
 				<CardTitle className="text-foreground flex flex-col md:flex-row md:items-center">
 					<span className="text-2xl md:text-2xl md:mr-2">{entry.word}</span>
 					{/* Desktop pronunciation */}
-					<div className="hidden md:block">
+					<div className="hidden md:flex">
 						<EntryPronunciation entry={entry} />
 					</div>
 					{/* Mobile pronunciation */}
-					<div className="block md:hidden flex">
+					<div className="flex md:hidden">
 						<EntryPronunciation entry={entry} isMobile={true} />
 					</div>
 				</CardTitle>
