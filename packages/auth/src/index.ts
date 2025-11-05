@@ -19,7 +19,7 @@ export const auth = betterAuth({
 		schema: schema,
 	}),
 	trustedOrigins: [
-		"https://*.gzowski-unnamed-glossary-app-pages.dev",
+		"https://*.gzowski-unnamed-glossary-app.pages.dev",
 		env.CORS_ORIGIN,
 		"mybettertapp://",
 		"exp://",
