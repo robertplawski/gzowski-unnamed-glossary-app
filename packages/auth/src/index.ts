@@ -39,15 +39,15 @@ export const auth = betterAuth({
 	advanced: {
 		defaultCookieAttributes: {
 			sameSite: "none",
-			secure: isProd,
-			httpOnly: isProd,
+			secure: true,
+			httpOnly: true,
 		},
 		// uncomment crossSubDomainCookies setting when ready to deploy and replace <your-workers-subdomain> with your actual workers subdomain
 		// https://developers.cloudflare.com/workers/wrangler/configuration/#workersdev
-		// crossSubDomainCookies: {
-		//   enabled: true,
-		//   domain: "<your-workers-subdomain>",
-		// },
+		crossSubDomainCookies: {
+			enabled: true,
+			domain: "gzowski-unnamed-glossary-app",
+		},
 	},
 	plugins: [
 		adminPlugin({
