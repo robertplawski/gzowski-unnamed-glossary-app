@@ -14,11 +14,9 @@ import { logger } from "hono/logger";
 const app = new Hono();
 const origins = [
 	env.CORS_ORIGIN,
-	env.WORKERS_CI_BRANCH
-		? `https://${env.WORKERS_CI_BRANCH}.gzowski-unnamed-glossary-app.pages.dev`
-		: null,
+	env.NODE_ENV === "development" && "*",
 	"https://dev.gzowski-unnamed-glossary-app.pages.dev",
-].filter((v) => v);
+].filter((v) => v) as string[];
 
 app.use(logger());
 app.use(
