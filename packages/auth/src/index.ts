@@ -19,7 +19,7 @@ export const auth = betterAuth({
 		schema: schema,
 	}),
 	trustedOrigins: [
-		!isProd ? "*" : "",
+		"https://*.gzowski-unnamed-glossary-app-pages.dev",
 		env.CORS_ORIGIN,
 		"mybettertapp://",
 		"exp://",
@@ -46,7 +46,7 @@ export const auth = betterAuth({
 		// https://developers.cloudflare.com/workers/wrangler/configuration/#workersdev
 		crossSubDomainCookies: {
 			enabled: true,
-			domain: "*-gzowski-unnamed-glossary-app.workers.dev",
+			domain: ".workers.dev",
 		},
 	},
 	plugins: [
