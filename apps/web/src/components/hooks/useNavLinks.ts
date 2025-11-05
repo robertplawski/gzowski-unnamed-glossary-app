@@ -97,18 +97,17 @@ export const checkRoutePermissions = async (route: { route: any }) => {
 export const getNavLinkForRoute = (route: string) => {
 	return baseNavLinks.filter((v) => v.to === route)[0];
 };
-export const checkNavLinkPermissions = async (link: NavLink) => {
-	const session = await authClient.getSession();
+export const checkNavLinkPermissions = async (link: NavLink, session) => {
 	if (!link.permissions) {
 		return link;
 	}
 
 	try {
-		if (!session.data) {
+		if (!session.userId) {
 			return null;
 		}
 		const { data } = await authClient.admin.hasPermission({
-			userId: session.data.user.id,
+			userId: session.userId,
 			permission: link.permissions,
 		});
 
@@ -121,9 +120,9 @@ export const checkNavLinkPermissions = async (link: NavLink) => {
 	}
 };
 
-export const getNavLinks = async () => {
+export const getNavLinks = async (session) => {
 	const filteredNavLinks = await Promise.all(
-		baseNavLinks.map(checkNavLinkPermissions),
+		baseNavLinks.map((v) => checkNavLinkPermissions(v, session)),
 	);
 
 	const result = filteredNavLinks.filter(
@@ -135,12 +134,14 @@ export default function useNavLinks(quickLinkSize = 4) {
 	const [loading, setLoading] = useState(true);
 	const [navLinks, setNavLinks] = useState<NavLink[]>();
 	const { data } = authClient.useSession();
+	const session = data?.session;
+	console.log(session);
 
 	useEffect(() => {
-		getNavLinks()
+		getNavLinks(session)
 			.then((v) => setNavLinks(v))
 			.finally(() => setLoading(false));
-	}, [data?.session.id]);
+	}, [session]);
 	const quickNavLinks = useMemo(
 		() => navLinks?.filter((_, i) => i < quickLinkSize) || [],
 		[navLinks],
