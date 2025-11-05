@@ -22,7 +22,7 @@
           "binding": "DB",
           "database_name": "guga",
           "database_id": "a933119a-6fbd-4e8d-9c75-4bafed3647bf",
-          "preview_database_id": "guga-dev",
+          "preview_database_id": "a933119a-6fbd-4e8d-9c75-4bafed3647bf",
           "migrations_dir": "../../packages/db/src/migrations/"
         }
       ],
