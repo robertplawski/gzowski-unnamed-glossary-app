@@ -41,13 +41,14 @@ export const auth = betterAuth({
 			sameSite: "none",
 			secure: true,
 			httpOnly: true,
+			partitioned: true,
 		},
 		// uncomment crossSubDomainCookies setting when ready to deploy and replace <your-workers-subdomain> with your actual workers subdomain
 		// https://developers.cloudflare.com/workers/wrangler/configuration/#workersdev
-		crossSubDomainCookies: {
+		/*crossSubDomainCookies: {
 			enabled: true,
 			domain: "rp8.workers.dev",
-		},
+		},*/
 	},
 	plugins: [
 		adminPlugin({
