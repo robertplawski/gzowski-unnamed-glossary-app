@@ -4,6 +4,9 @@
 	"compatibility_date": "2025-06-15",
 	"compatibility_flags": ["nodejs_compat"],
 	"vars": {
+
+		"NODE_ENV": "production",
+    "CORS_ORIGIN":"https://api-guga.eksabajt.pl"
 		// Add public environment variables here
 		// Example: "CORS_ORIGIN": "https://your-domain.com"
 	},
@@ -11,8 +14,23 @@
     "preview":{
       "vars":{
         "CORS_ORIGIN":"*",
-        "NODE_ENV":"development"
-      }
+        "NODE_ENV":"development",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "guga-dev",
+          "database_id": "a933119a-6fbd-4e8d-9c75-4bafed3647bf",
+          "preview_database_id": "local-guga",
+          "migrations_dir": "../../packages/db/src/migrations/"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "WORD_CACHE",
+          "id": "fa3e7424b2ee4dc3914080ee3bf3341a"
+        }
+      ]
     },
     "production":{
       "vars":{
@@ -39,7 +57,8 @@
 			"database_name": "guga",
 			"database_id": "1be08cec-2238-4f8f-8f9d-7fdc6b480046",
 			"preview_database_id": "local-guga",
-			"migrations_dir": "../../packages/db/src/migrations"
+
+          "migrations_dir": "../../packages/db/src/migrations/"
 		}
 	],
   "kv_namespaces": [
@@ -47,5 +66,6 @@
       "binding": "WORD_CACHE",
       "id": "e905512efc904026879e72fe3c86c6da"
     }
-  ]
+  ],
+
 }
