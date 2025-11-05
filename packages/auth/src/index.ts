@@ -46,7 +46,7 @@ export const auth = betterAuth({
 		// https://developers.cloudflare.com/workers/wrangler/configuration/#workersdev
 		crossSubDomainCookies: {
 			enabled: true,
-			domain: ".rp8.workers.dev",
+			domain: "rp8.workers.dev",
 		},
 	},
 	plugins: [
