@@ -19,17 +19,15 @@ const origins = [
 ].filter((v) => v) as string[];
 
 app.use(logger());
-if (env.NODE_ENV === "production") {
-	app.use(
-		"/*",
-		cors({
-			origin: origins,
-			allowMethods: ["GET", "POST", "OPTIONS"],
-			allowHeaders: ["Content-Type", "Authorization"],
-			credentials: true,
-		}),
-	);
-}
+app.use(
+	"/*",
+	cors({
+		origin: env.NODE_ENV === "production" ? origins : "*",
+		allowMethods: ["GET", "POST", "OPTIONS"],
+		allowHeaders: ["Content-Type", "Authorization"],
+		credentials: true,
+	}),
+);
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
