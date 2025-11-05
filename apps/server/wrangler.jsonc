@@ -10,7 +10,16 @@
 		// Add public environment variables here
 		// Example: "CORS_ORIGIN": "https://your-domain.com"
 	},
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    }
+    },
   "env":{
+
     "preview":{
       "vars":{
         "CORS_ORIGIN":"https://dev.gzowski-unnamed-glossary-app.pages.dev",
