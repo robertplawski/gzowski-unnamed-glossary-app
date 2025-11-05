@@ -46,7 +46,7 @@ export const auth = betterAuth({
 		// https://developers.cloudflare.com/workers/wrangler/configuration/#workersdev
 		crossSubDomainCookies: {
 			enabled: true,
-			domain: "gzowski-unnamed-glossary-app",
+			domain: "*-gzowski-unnamed-glossary-app.workers.dev",
 		},
 	},
 	plugins: [
