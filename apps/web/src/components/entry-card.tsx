@@ -11,8 +11,8 @@ import {
 	ChevronUp,
 	AlertCircle,
 } from "lucide-react";
-import { DictionaryEntry } from "./dictionary-entry";
-import { Button } from "./ui/button";
+import {DictionaryEntry} from "./dictionary-entry";
+import {Button} from "./ui/button";
 import {
 	Card,
 	CardAction,
@@ -21,34 +21,34 @@ import {
 	CardHeader,
 	CardTitle,
 } from "./ui/card";
-import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { orpc, queryClient } from "@/utils/orpc";
-import { useNavigate } from "@tanstack/react-router";
+import {useState} from "react";
+import {useMutation, useQuery} from "@tanstack/react-query";
+import {orpc, queryClient} from "@/utils/orpc";
+import {useNavigate} from "@tanstack/react-router";
 
-function CommentSection({ entry }: { entry: any }) {
+function CommentSection({entry}: {entry: any}) {
 	const navigate = useNavigate();
-	const handleAuthRedirect = () => navigate({ to: "/login", throw: true });
+	const handleAuthRedirect = () => navigate({to: "/login", throw: true});
 	const [commentText, setCommentText] = useState("");
 
-	const { data: comments, isLoading: commentsLoading } = useQuery(
-		orpc.comment.getByEntry.queryOptions({ input: { entryId: entry.id } }),
+	const {data: comments, isLoading: commentsLoading} = useQuery(
+		orpc.comment.getByEntry.queryOptions({input: {entryId: entry.id}})
 	);
 
-	const { mutate: addComment, isPending: isAddingComment } = useMutation(
+	const {mutate: addComment, isPending: isAddingComment} = useMutation(
 		orpc.comment.create.mutationOptions({
 			onSuccess: () => {
 				setCommentText("");
 				queryClient.invalidateQueries({
 					queryKey: orpc.comment.getByEntry.queryOptions({
-						input: { entryId: entry.id },
+						input: {entryId: entry.id},
 					}).queryKey,
 				});
 			},
 			onError: (error) => {
 				handleAuthRedirect(error);
 			},
-		}),
+		})
 	);
 
 	const handleSubmitComment = (e: React.FormEvent) => {
@@ -74,8 +74,7 @@ function CommentSection({ entry }: { entry: any }) {
 				<Button
 					type="submit"
 					disabled={!commentText.trim() || isAddingComment}
-					size="sm"
-				>
+					size="sm">
 					<LucideSend className="h-4 w-4" />
 				</Button>
 			</form>
@@ -107,39 +106,39 @@ function CommentSection({ entry }: { entry: any }) {
 	);
 }
 
-function EntryInteractions({ entry }: { entry: any }) {
+function EntryInteractions({entry}: {entry: any}) {
 	const navigate = useNavigate();
-	const handleAuthRedirect = () => navigate({ to: "/login", throw: true });
+	const handleAuthRedirect = () => navigate({to: "/login", throw: true});
 	const [showComments, setShowComments] = useState(false);
 
-	const { data: comments, isLoading: commentsLoading } = useQuery(
-		orpc.comment.getByEntry.queryOptions({ input: { entryId: entry.id } }),
+	const {data: comments, isLoading: commentsLoading} = useQuery(
+		orpc.comment.getByEntry.queryOptions({input: {entryId: entry.id}})
 	);
 
-	const { data: votesData, isLoading: votesLoading } = useQuery(
+	const {data: votesData, isLoading: votesLoading} = useQuery(
 		orpc.entryVote.getVote.queryOptions({
-			input: { entryId: entry.id },
-		}),
+			input: {entryId: entry.id},
+		})
 	);
 
-	const { mutate: vote } = useMutation(
+	const {mutate: vote} = useMutation(
 		orpc.entryVote.vote.mutationOptions({
-			onMutate: async ({ entryId, value }) => {
+			onMutate: async ({entryId, value}) => {
 				await queryClient.cancelQueries({
 					queryKey: orpc.entryVote.getVote.queryOptions({
-						input: { entryId },
+						input: {entryId},
 					}).queryKey,
 				});
 
 				const previousVote = queryClient.getQueryData(
 					orpc.entryVote.getVote.queryOptions({
-						input: { entryId },
-					}).queryKey,
+						input: {entryId},
+					}).queryKey
 				);
 
 				queryClient.setQueryData(
 					orpc.entryVote.getVote.queryOptions({
-						input: { entryId },
+						input: {entryId},
 					}).queryKey,
 					(old: any) => {
 						if (!old) return old;
@@ -149,18 +148,18 @@ function EntryInteractions({ entry }: { entry: any }) {
 							userVote: value,
 							totalScore: old.totalScore + scoreDiff,
 						};
-					},
+					}
 				);
 
-				return { previousVote, entryId };
+				return {previousVote, entryId};
 			},
 			onError: (error, variables, context) => {
 				if (context?.previousVote) {
 					queryClient.setQueryData(
 						orpc.entryVote.getVote.queryOptions({
-							input: { entryId: context.entryId },
+							input: {entryId: context.entryId},
 						}).queryKey,
-						context.previousVote,
+						context.previousVote
 					);
 				}
 				handleAuthRedirect(error);
@@ -168,34 +167,34 @@ function EntryInteractions({ entry }: { entry: any }) {
 			onSettled: (data, error, variables) => {
 				queryClient.invalidateQueries({
 					queryKey: orpc.entryVote.getVote.queryOptions({
-						input: { entryId: variables.entryId },
+						input: {entryId: variables.entryId},
 					}).queryKey,
 				});
 				queryClient.invalidateQueries({
 					queryKey: orpc.entry.getSortedByVotes.queryOptions().queryKey,
 				});
 			},
-		}),
+		})
 	);
 
-	const { mutate: resetVote } = useMutation(
+	const {mutate: resetVote} = useMutation(
 		orpc.entryVote.resetVote.mutationOptions({
-			onMutate: async ({ entryId }) => {
+			onMutate: async ({entryId}) => {
 				await queryClient.cancelQueries({
 					queryKey: orpc.entryVote.getVote.queryOptions({
-						input: { entryId },
+						input: {entryId},
 					}).queryKey,
 				});
 
 				const previousVote = queryClient.getQueryData(
 					orpc.entryVote.getVote.queryOptions({
-						input: { entryId },
-					}).queryKey,
+						input: {entryId},
+					}).queryKey
 				);
 
 				queryClient.setQueryData(
 					orpc.entryVote.getVote.queryOptions({
-						input: { entryId },
+						input: {entryId},
 					}).queryKey,
 					(old: any) => {
 						if (!old) return old;
@@ -205,18 +204,18 @@ function EntryInteractions({ entry }: { entry: any }) {
 							userVote: 0,
 							totalScore: old.totalScore + scoreDiff,
 						};
-					},
+					}
 				);
 
-				return { previousVote, entryId };
+				return {previousVote, entryId};
 			},
 			onError: (error, variables, context) => {
 				if (context?.previousVote) {
 					queryClient.setQueryData(
 						orpc.entryVote.getVote.queryOptions({
-							input: { entryId: context.entryId },
+							input: {entryId: context.entryId},
 						}).queryKey,
-						context.previousVote,
+						context.previousVote
 					);
 				}
 				handleAuthRedirect(error);
@@ -224,14 +223,14 @@ function EntryInteractions({ entry }: { entry: any }) {
 			onSettled: (data, error, variables) => {
 				queryClient.invalidateQueries({
 					queryKey: orpc.entryVote.getVote.queryOptions({
-						input: { entryId: variables.entryId },
+						input: {entryId: variables.entryId},
 					}).queryKey,
 				});
 				queryClient.invalidateQueries({
 					queryKey: orpc.entry.getSortedByVotes.queryOptions().queryKey,
 				});
 			},
-		}),
+		})
 	);
 
 	if (commentsLoading || votesLoading || !votesData) {
@@ -262,48 +261,59 @@ function EntryInteractions({ entry }: { entry: any }) {
 	return (
 		<>
 			<CardFooter>
-				<CardAction className="flex items-center flex-row gap-2">
-					<Button
-						variant={votesData?.userVote > 0 ? "default" : "outline"}
-						onClick={() =>
-							votesData?.userVote > 0
-								? resetVote({ entryId: entry.id })
-								: vote({ entryId: entry.id, value: 1 })
-						}
-					>
-						<LucideArrowUp />
-					</Button>
+				<CardAction className="flex items-center flex-row gap-2 w-full">
+					<div className="flex items-center gap-2">
+						<Button
+							variant={votesData?.userVote > 0 ? "default" : "outline"}
+							onClick={() =>
+								votesData?.userVote > 0
+									? resetVote({entryId: entry.id})
+									: vote({entryId: entry.id, value: 1})
+							}
+							className="min-w-[48px] min-h-[48px]">
+							<LucideArrowUp />
+						</Button>
 
-					<p className="w-10 flex items-center justify-center">
-						{votesData?.totalScore ?? 0}
-					</p>
-					<Button
-						onClick={() =>
-							votesData?.userVote < 0
-								? resetVote({ entryId: entry.id })
-								: vote({ entryId: entry.id, value: -1 })
-						}
-						variant={votesData?.userVote < 0 ? "default" : "outline"}
-					>
-						<LucideArrowDown />
-					</Button>
+						<p className="w-10 flex items-center justify-center">
+							{votesData?.totalScore ?? 0}
+						</p>
+						<Button
+							onClick={() =>
+								votesData?.userVote < 0
+									? resetVote({entryId: entry.id})
+									: vote({entryId: entry.id, value: -1})
+							}
+							variant={votesData?.userVote < 0 ? "default" : "outline"}
+							className="min-w-[48px] min-h-[48px]">
+							<LucideArrowDown />
+						</Button>
+						<Button
+							variant="outline"
+							onClick={() => setShowComments(!showComments)}
+							className="min-w-[48px] min-h-[48px]">
+							<LucideMessageCircle />
+							<span className="md:inline hidden ml-1">
+								{comments?.length || 0} Comments
+							</span>
+							<span className="md:hidden inline ml-1">
+								{comments?.length || 0}
+							</span>
+							<span className="md:inline hidden">
+								{showComments ? (
+									<LucideChevronUp className="ml-1 h-4 w-4" />
+								) : (
+									<LucideChevronDown className="ml-1 h-4 w-4" />
+								)}
+							</span>
+						</Button>
+					</div>
+
+					<div className="flex-1 md:flex-none" />
 					<Button
 						variant="outline"
-						onClick={() => setShowComments(!showComments)}
-					>
-						<LucideMessageCircle />
-						{comments?.length || 0} Comments
-						{showComments ? (
-							<LucideChevronUp className="ml-1 h-4 w-4" />
-						) : (
-							<LucideChevronDown className="ml-1 h-4 w-4" />
-						)}
-					</Button>
-
-					<div className="flex-1" />
-					<Button variant="outline">
+						className="min-w-[48px] min-h-[48px] ml-auto md:ml-0">
 						<LucideFlag />
-						Report
+						<span className="md:inline hidden ml-1">Report</span>
 					</Button>
 				</CardAction>
 			</CardFooter>
@@ -316,7 +326,13 @@ function EntryInteractions({ entry }: { entry: any }) {
 	);
 }
 
-function EntryPronunciation({ entry }: { entry: any }) {
+function EntryPronunciation({
+	entry,
+	isMobile = false,
+}: {
+	entry: any;
+	isMobile?: boolean;
+}) {
 	const [activeAudio, setActiveAudio] = useState<string | null>(null);
 
 	const playAudio = (audioUrl: string) => {
@@ -330,51 +346,64 @@ function EntryPronunciation({ entry }: { entry: any }) {
 
 	if (!(entry.remoteDictionaryEntry && entry.remoteDictionaryEntry.phonetics)) {
 		return (
-			<span className="text-muted-foreground text-normal ml-3">
+			<span
+				className={`text-muted-foreground ${isMobile ? "text-sm block mt-1" : "text-normal ml-3 inline-block"}`}>
 				/{entry.pronunciation}/
 			</span>
 		);
 	}
 	const {
-		remoteDictionaryEntry: { phonetics },
+		remoteDictionaryEntry: {phonetics},
 	} = entry;
 
 	return phonetics
-		.sort(({ audio }: { audio?: string }) => (audio ? -1 : 1))
-		.map(
-			({ text, audio }: { text?: string; audio?: string }, index: number) => (
-				<span key={index}>
-					{audio && (
-						<Button
-							onClick={() => playAudio(audio)}
-							size={"sm"}
-							variant="outline"
-							className="ml-2"
-						>
-							<LucideVolume2 />
-						</Button>
-					)}
-					{text && (
-						<span className="text-muted-foreground text-normal ml-3">
-							{text}
-						</span>
-					)}
-				</span>
-			),
-		);
+		.sort(({audio}: {audio?: string}) => (audio ? -1 : 1))
+		.map(({text, audio}: {text?: string; audio?: string}, index: number) => (
+			<span
+				key={index}
+				className={
+					isMobile
+						? "inline-flex items-center mt-1 min-h-[32px]"
+						: "inline-flex items-center"
+				}>
+				{audio && (
+					<Button
+						onClick={() => playAudio(audio)}
+						size={isMobile ? "icon" : "sm"}
+						variant="outline"
+						className={`${isMobile ? "h-6 w-6 mr-2" : "ml-2"} min-h-[32px] min-w-[32px]`}>
+						<LucideVolume2 className={isMobile ? "h-3 w-3" : ""} />
+					</Button>
+				)}
+				{text && (
+					<span
+						className={`text-muted-foreground ${isMobile ? "text-sm mr-3" : "text-normal ml-3"}`}>
+						{text}
+					</span>
+				)}
+			</span>
+		));
 }
 
-export function EntryCard({ entry }: { entry: any }) {
+export function EntryCard({entry}: {entry: any}) {
 	const [showDefinitions, setShowDefinitions] = useState(false);
+
 	return (
 		<Card key={entry.id} className="w-full">
 			<CardHeader>
-				<CardTitle className="text-2xl text-foreground">
-					<span className="mr-2">{entry.word}</span>
-					<EntryPronunciation entry={entry} />
+				<CardTitle className="text-foreground flex flex-col md:flex-row md:items-center">
+					<span className="text-2xl md:text-2xl md:mr-2">{entry.word}</span>
+					{/* Desktop pronunciation */}
+					<div className="hidden md:flex">
+						<EntryPronunciation entry={entry} />
+					</div>
+					{/* Mobile pronunciation */}
+					<div className="flex md:hidden">
+						<EntryPronunciation entry={entry} isMobile={true} />
+					</div>
 				</CardTitle>
 			</CardHeader>
-			<CardContent className="grid gap-4">
+			<CardContent className="grid gap-4 text-sm md:text-base">
 				{entry.translation && (
 					<div>
 						<h3 className="font-semibold text-foreground">Translation:</h3>
@@ -392,12 +421,12 @@ export function EntryCard({ entry }: { entry: any }) {
 					<Button
 						variant={"outline"}
 						onClick={() => setShowDefinitions((v) => !v)}
-					>
+						className="min-h-[48px]">
 						{showDefinitions ? <ChevronUp /> : <ChevronDown />}
 						<span>{showDefinitions ? "Hide" : "Show"} definition</span>
 					</Button>
 				) : (
-					<Button disabled>
+					<Button disabled className="min-h-[48px]">
 						<AlertCircle /> Definition unavailable, look for comments
 					</Button>
 				)}
@@ -406,7 +435,7 @@ export function EntryCard({ entry }: { entry: any }) {
 				)}
 			</CardContent>
 			<CardFooter>
-				<div className="flex flex-row flex-wrap gap-1 text-muted-foreground">
+				<div className="flex flex-row flex-wrap gap-1 text-muted-foreground text-xs md:text-sm">
 					{entry.notes && <p>{entry.notes} | </p>}
 					<p> Dictionary entry provided by</p>
 					<a className="underline" href="https://dictionaryapi.dev">
