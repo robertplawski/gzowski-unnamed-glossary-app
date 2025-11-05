@@ -15,6 +15,7 @@
       "vars":{
         "CORS_ORIGIN":"*",
         "NODE_ENV":"development",
+        "BETTER_AUTH_URL":"https://dev.gzowski-unnamed-glossary-app.pages.dev",
       },
       "d1_databases": [
         {
