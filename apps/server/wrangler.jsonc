@@ -6,7 +6,7 @@
 	"vars": {
 
 		"NODE_ENV": "production",
-    "CORS_ORIGIN":"https://api-guga.eksabajt.pl"
+    "CORS_ORIGIN":"https://guga.eksabajt.pl"
 		// Add public environment variables here
 		// Example: "CORS_ORIGIN": "https://your-domain.com"
 	},
