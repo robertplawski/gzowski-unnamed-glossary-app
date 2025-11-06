@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
-import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 
 interface DictionaryEntryProps {
 	entry: any;
@@ -41,16 +41,19 @@ export function DictionaryEntry({ entry }: DictionaryEntryProps) {
 												Synonyms:
 											</span>
 											<div className="flex flex-wrap gap-1">
-												{definition.synonyms.map(
-													(synonym: string, synIndex: number) => (
-														<span
-															key={synIndex}
-															className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs dark:bg-green-900 dark:text-green-300"
-														>
-															{synonym}
-														</span>
-													),
-												)}
+                                                {definition.synonyms.map(
+                                                    (synonym: string, synIndex: number) => (
+                                                        <Link
+                                                            key={synIndex}
+                                                            to="/glossary"
+                                                            search={{ query: synonym }}
+                                                            className="px-2 py-1 rounded text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 cursor-pointer transition-colors"
+                                                            aria-label={`Search glossary for synonym ${synonym}`}
+                                                        >
+                                                            {synonym}
+                                                        </Link>
+                                                    ),
+                                                )}
 											</div>
 										</div>
 									)}
