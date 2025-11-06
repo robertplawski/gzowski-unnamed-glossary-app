@@ -10,6 +10,10 @@ import { auth } from "@gzowski-unnamed-glossary-app/auth";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { db } from "@gzowski-unnamed-glossary-app/db";
+import { entry } from "@gzowski-unnamed-glossary-app/db/schema/dictionary";
+import { or, like } from "drizzle-orm";
+import { performEnhancedSearch, getSearchStats } from "@gzowski-unnamed-glossary-app/api/utils/search";
 
 const app = new Hono();
 const origins = [env.CORS_ORIGIN, "*.gzowski-unnamed-glossary-app.pages.dev"];
@@ -73,7 +77,90 @@ app.use("/*", async (c, next) => {
 });
 
 app.get("/", (c) => {
-	return c.text("OK");
+    return c.text("OK");
+});
+
+// Glossary route: accepts ?q= or ?query= and returns sanitized search results
+app.get("/glossary", async (c) => {
+    const url = new URL(c.req.url);
+    const params = url.searchParams;
+    const rawQuery = params.get("query") ?? params.get("q");
+
+    // Helper: safely decode and trim
+    const normalize = (value: string | null | undefined): string => {
+        if (!value) return "";
+        try {
+            value = decodeURIComponent(value);
+        } catch {
+            // ignore
+        }
+        return value.trim();
+    };
+
+    const query = normalize(rawQuery);
+
+    // Optional parameters
+    const limitParam = params.get("limit");
+    const offsetParam = params.get("offset");
+    const includeFuzzyParam = params.get("includeFuzzy");
+    const includeSemanticParam = params.get("includeSemantic");
+
+    const limit = Math.min(Math.max(parseInt(limitParam ?? "20", 10) || 20, 1), 100);
+    const offset = Math.max(parseInt(offsetParam ?? "0", 10) || 0, 0);
+    const includeFuzzy = includeFuzzyParam === null ? true : includeFuzzyParam === "true";
+    const includeSemantic = includeSemanticParam === null ? true : includeSemanticParam === "true";
+
+    // Handle empty or malformed params gracefully
+    if (!query || query.length === 0) {
+        return c.json({
+            query: null,
+            message: "Provide a search via ?q= or ?query=",
+            entries: [],
+            pagination: { total: 0, limit, offset, hasMore: false },
+        });
+    }
+
+    // Broad match via LIKE across key fields
+    const potentialMatches = await db
+        .select()
+        .from(entry)
+        .where(
+            or(
+                like(entry.word, `%${query}%`),
+                like(entry.translation, `%${query}%`),
+                like(entry.example, `%${query}%`),
+                like(entry.notes, `%${query}%`),
+                like(entry.partOfSpeech, `%${query}%`),
+            ),
+        )
+        .limit(limit * 3)
+        .all();
+
+    // Enhanced scoring & ranking
+    const scored = await performEnhancedSearch(potentialMatches, query, {
+        limit: limit * 2,
+        offset: 0,
+        includeFuzzy,
+        includeSemantic,
+    });
+
+    const top = scored.slice(0, limit).map((r) => r.entry);
+    const totalCount = scored.length;
+    const stats = getSearchStats(scored);
+    stats.queryLength = query.length;
+    stats.executionTime = 0; // Computation cost minimal here; UI shows local time
+
+    return c.json({
+        query,
+        entries: top,
+        searchStats: stats,
+        pagination: {
+            total: totalCount,
+            limit,
+            offset,
+            hasMore: offset + limit < totalCount,
+        },
+    });
 });
 
 export default app;
