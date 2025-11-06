@@ -12,7 +12,13 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
 const app = new Hono();
-const origins = [env.CORS_ORIGIN, "*.gzowski-unnamed-glossary-app.pages.dev"];
+const origins = [
+	env.CORS_ORIGIN,
+	env.WORKERS_CI_BRANCH
+		? `https://${env.WORKERS_CI_BRANCH}.gzowski-unnamed-glossary-app.pages.dev`
+		: null,
+	"https://dev.gzowski-unnamed-glossary-app.pages.dev",
+].filter((v) => v);
 
 app.use(logger());
 app.use(
@@ -75,5 +81,14 @@ app.use("/*", async (c, next) => {
 app.get("/", (c) => {
 	return c.text("OK");
 });
+
+if (env.NODE_ENV !== "production") {
+	app.get("/cors", (c) => {
+		return c.json({
+			message: "sup",
+			origins,
+		});
+	});
+}
 
 export default app;
