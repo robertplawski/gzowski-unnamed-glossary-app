@@ -10,6 +10,7 @@ import { protectedProcedure, publicProcedure } from "..";
 import { db } from "@gzowski-unnamed-glossary-app/db";
 import { ORPCError } from "@orpc/client";
 import type { RouterClient } from "@orpc/server";
+import { performEnhancedSearch, getSearchStats, type SearchResult } from "../utils/search";
 
 // ===== Entry Schemas =====
 const entryCreateSchema = z.object({
@@ -167,20 +168,24 @@ export const entryRouter = {
 				return JSON.stringify(remoteData);
 			}),
 
-		// Add this to your existing procedures
+		// Enhanced search with fuzzy matching and multi-tier scoring
 		search: publicProcedure
 			.input(
 				z.object({
 					query: z.string().min(1, "Search query cannot be empty"),
 					limit: z.number().min(1).max(100).optional().default(20),
 					offset: z.number().min(0).optional().default(0),
+					includeFuzzy: z.boolean().optional().default(true),
+					includeSemantic: z.boolean().optional().default(true),
 				}),
 			)
 			.handler(async ({ input, context }) => {
-				const { query, limit, offset } = input;
+				const { query, limit, offset, includeFuzzy, includeSemantic } = input;
+				const startTime = Date.now();
 
-				// Search across multiple fields using SQLite LIKE (which is case-insensitive)
-				const entries = await db
+				// First, get a broader set of potential matches using SQLite LIKE
+				// This allows us to work with a manageable dataset for scoring
+				const potentialMatches = await db
 					.select()
 					.from(entry)
 					.where(
@@ -192,37 +197,46 @@ export const entryRouter = {
 							like(entry.partOfSpeech, `%${query}%`),
 						),
 					)
-					.limit(limit)
-					.offset(offset)
+					.limit(limit * 3) // Get more results to allow for better scoring
 					.all();
 
+				// Perform enhanced search with scoring and ranking
+				const searchResults = await performEnhancedSearch(
+					potentialMatches,
+					query,
+					{
+						limit: limit * 2, // Get extra results for better ranking
+						offset: 0,
+						includeFuzzy,
+						includeSemantic,
+					}
+				);
+
+				// Get the top results after scoring
+				const topResults = searchResults.slice(0, limit);
+
+				// Enrich with remote data
 				const enrichedEntries = await enrichEntriesWithRemoteData(
-					entries,
+					topResults.map(result => result.entry),
 					context,
 				);
 
-				// Get total count for pagination
-				const totalResult = await db
-					.select({ count: sql<number>`count(*)` })
-					.from(entry)
-					.where(
-						or(
-							like(entry.word, `%${query}%`),
-							like(entry.translation, `%${query}%`),
-							like(entry.example, `%${query}%`),
-							like(entry.notes, `%${query}%`),
-							like(entry.partOfSpeech, `%${query}%`),
-						),
-					)
-					.get();
+				// Get total count for pagination (from the scored results)
+				const totalCount = searchResults.length;
+
+				// Get search statistics for debugging
+				const searchStats = getSearchStats(searchResults);
+				searchStats.queryLength = query.length;
+				searchStats.executionTime = Date.now() - startTime;
 
 				return {
 					entries: enrichedEntries,
+					searchStats,
 					pagination: {
-						total: totalResult?.count || 0,
+						total: totalCount,
 						limit,
 						offset,
-						hasMore: offset + limit < (totalResult?.count || 0),
+						hasMore: offset + limit < totalCount,
 					},
 				};
 			}),
