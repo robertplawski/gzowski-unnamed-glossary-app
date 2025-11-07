@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import React, { ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,13 +32,13 @@ export default function DictionaryAdminForm() {
 	// Fetch dictionaries for the entry form - Get the query options object
 	const dictionaryQueryOptions = orpc.dictionary.getAll.queryOptions();
 	const { data: dictionaries = [], isLoading: dictionariesLoading } = useQuery(
-		dictionaryQueryOptions, // Use the options object directly
+		dictionaryQueryOptions // Use the options object directly
 	);
 
 	// Fetch entries for the edit entries tab - Get the query options object
 	const entryQueryOptions = orpc.entry.getAll.queryOptions();
 	const { data: entries = [], isLoading: entriesLoading } = useQuery(
-		entryQueryOptions, // Use the options object directly
+		entryQueryOptions // Use the options object directly
 	);
 
 	// Dictionary form state
@@ -252,7 +253,7 @@ export default function DictionaryAdminForm() {
 	const handleDeleteDictionary = (id: string) => {
 		if (
 			window.confirm(
-				"Are you sure you want to delete this dictionary? This will also delete all entries in this dictionary.",
+				"Are you sure you want to delete this dictionary? This will also delete all entries in this dictionary."
 			)
 		) {
 			deleteDictionary.mutate({ id });
@@ -298,7 +299,44 @@ export default function DictionaryAdminForm() {
 		});
 		setIsEditingEntry(false);
 	};
+	const [importData, setImportData] = useState<any | null>(null);
+	const [importStatus, setImportStatus] = useState<string>("");
 
+	// 📂 Funkcja do wczytywania pliku JSON
+	const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		const reader = new FileReader();
+		reader.onload = event => {
+			try {
+				const result = event.target?.result as string;
+				const jsonData = JSON.parse(result);
+				setImportData(jsonData);
+				setImportStatus("✅ Plik JSON wczytany poprawnie");
+			} catch (error) {
+				console.error("Błąd parsowania JSON:", error);
+				setImportStatus("❌ Niepoprawny plik JSON");
+			}
+		};
+		reader.readAsText(file);
+	};
+
+	const handleImport = async () => {
+		if (!importData) {
+			setImportStatus("⚠️ Najpierw wczytaj plik JSON");
+			return;
+		}
+
+		try {
+			setImportStatus("⏳ Importowanie danych...");
+			await (orpc as any).entries.importJSON(importData);
+			setImportStatus("🎉 Import zakończony sukcesem!");
+		} catch (err) {
+			console.error(err);
+			setImportStatus("❌ Błąd podczas importu danych");
+		}
+	};
 	return (
 		<div className="container p-6 sm:p-12 mx-auto max-w-6xl">
 			<div className="flex flex-col gap-4 mb-6">
@@ -321,13 +359,14 @@ export default function DictionaryAdminForm() {
 			)}
 
 			<Tabs value={activeTab} onValueChange={setActiveTab}>
-				<TabsList className="grid w-full grid-cols-4 mb-6">
+				<TabsList className="grid w-full grid-cols-5 mb-6">
 					<TabsTrigger value="dictionary">Dictionaries</TabsTrigger>
 					<TabsTrigger value="manage-dictionaries">
 						Manage Dictionaries
 					</TabsTrigger>
 					<TabsTrigger value="entry">Entries</TabsTrigger>
 					<TabsTrigger value="edit-entries">Manage Entries</TabsTrigger>
+					<TabsTrigger value="import">Import</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="dictionary">
@@ -352,7 +391,7 @@ export default function DictionaryAdminForm() {
 										id="dict-name"
 										placeholder="e.g., English-Spanish, Technical Terms"
 										value={dictionaryForm.name}
-										onChange={(e) =>
+										onChange={e =>
 											setDictionaryForm({
 												...dictionaryForm,
 												name: e.target.value,
@@ -368,7 +407,7 @@ export default function DictionaryAdminForm() {
 										id="dict-description"
 										placeholder="Optional description of this dictionary"
 										value={dictionaryForm.description}
-										onChange={(e) =>
+										onChange={e =>
 											setDictionaryForm({
 												...dictionaryForm,
 												description: e.target.value,
@@ -499,7 +538,7 @@ export default function DictionaryAdminForm() {
 									<Label htmlFor="entry-dictionary">Select Dictionary *</Label>
 									<Select
 										value={entryForm.dictionaryId}
-										onValueChange={(value) =>
+										onValueChange={value =>
 											setEntryForm({ ...entryForm, dictionaryId: value })
 										}
 									>
@@ -523,7 +562,7 @@ export default function DictionaryAdminForm() {
 											id="entry-word"
 											placeholder="e.g., hello, algorithm"
 											value={entryForm.word}
-											onChange={(e) =>
+											onChange={e =>
 												setEntryForm({ ...entryForm, word: e.target.value })
 											}
 											required
@@ -536,7 +575,7 @@ export default function DictionaryAdminForm() {
 											id="entry-translation"
 											placeholder="e.g., hola, algoritmo"
 											value={entryForm.translation}
-											onChange={(e) =>
+											onChange={e =>
 												setEntryForm({
 													...entryForm,
 													translation: e.target.value,
@@ -553,7 +592,7 @@ export default function DictionaryAdminForm() {
 											id="entry-pos"
 											placeholder="e.g., noun, verb, adjective"
 											value={entryForm.partOfSpeech}
-											onChange={(e) =>
+											onChange={e =>
 												setEntryForm({
 													...entryForm,
 													partOfSpeech: e.target.value,
@@ -568,7 +607,7 @@ export default function DictionaryAdminForm() {
 											id="entry-pronunciation"
 											placeholder="e.g., /həˈloʊ/, /ˈælɡəˌrɪðəm/"
 											value={entryForm.pronunciation}
-											onChange={(e) =>
+											onChange={e =>
 												setEntryForm({
 													...entryForm,
 													pronunciation: e.target.value,
@@ -584,7 +623,7 @@ export default function DictionaryAdminForm() {
 										id="entry-example"
 										placeholder="Example sentence using this word"
 										value={entryForm.example}
-										onChange={(e) =>
+										onChange={e =>
 											setEntryForm({ ...entryForm, example: e.target.value })
 										}
 										rows={2}
@@ -597,7 +636,7 @@ export default function DictionaryAdminForm() {
 										id="entry-notes"
 										placeholder="Additional notes or information"
 										value={entryForm.notes}
-										onChange={(e) =>
+										onChange={e =>
 											setEntryForm({ ...entryForm, notes: e.target.value })
 										}
 										rows={3}
@@ -661,7 +700,7 @@ export default function DictionaryAdminForm() {
 								<div className="space-y-4">
 									{entries.map((entry: any) => {
 										const dictionary = dictionaries.find(
-											(d: any) => d.id === entry.dictionaryId,
+											(d: any) => d.id === entry.dictionaryId
 										);
 										return (
 											<div
@@ -702,6 +741,47 @@ export default function DictionaryAdminForm() {
 									})}
 								</div>
 							)}
+						</CardContent>
+					</Card>
+				</TabsContent>
+				<TabsContent value="import">
+					<Card>
+						<CardHeader>
+							<CardTitle>Import file.</CardTitle>
+							<CardDescription>
+								Send JSON file format with data.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<div>
+								<form className="gap-4 border-1 p-3">
+									<Input
+										type="file"
+										id="fileInput"
+										accept=".json"
+										onChange={handleFileChange}
+										className="hidden"
+									/>
+									<Label
+										htmlFor="fileInput"
+										className="text-xl font-bold flex flex-col"
+									>
+										<p>Import file</p>
+										<p className="mt-2 text-sm text-gray-600">{"File name"}</p>
+									</Label>
+								</form>
+								<Button className="mt-4" onClick={handleImport}>
+									Send data.
+								</Button>
+								{importData && (
+									<p className="mt-3 text-sm text-green-400">
+										Wczytano {Object.keys(importData).length} elementów.
+									</p>
+								)}
+								{importStatus && (
+									<p className="mt-4 text-sm text-gray-300">{importStatus}</p>
+								)}
+							</div>
 						</CardContent>
 					</Card>
 				</TabsContent>
