@@ -5,13 +5,13 @@ import { orpc } from "@/utils/orpc";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/random")({
+export const Route = createFileRoute("/wotd")({
 	component: RouteComponent,
 });
 
 function RouteComponent() {
-	const { refetch, data, isLoading, isRefetching, error } = useQuery({
-		...orpc.entry.getRandom.queryOptions(),
+	const { data, isLoading, isRefetching, error } = useQuery({
+		...orpc.entry.getDaily.queryOptions(),
 	});
 
 	return (
@@ -19,28 +19,9 @@ function RouteComponent() {
 			<div className="grid gap-6 p-6 sm:p-12">
 				<div className="flex flex-col gap-4">
 					<h1 className="font-bold text-3xl text-foreground">
-						Random words...
+						GUGA Word of the day
 					</h1>
-					<p className="text-muted-foreground">
-						Click a button to build a better vocabulary.
-					</p>
-					<Button
-						disabled={isLoading || isRefetching}
-						className="my-2 flexflex-row items-center justify-center"
-						variant="secondary"
-						onClick={() => refetch()}
-					>
-						{!isLoading ? (
-							<>
-								<Clover />
-								I'm feeling lucky
-							</>
-						) : (
-							<>
-								<Loader2 className="animate-spin" /> Loading...
-							</>
-						)}
-					</Button>
+					<p className="text-muted-foreground">Start your day with new word</p>
 				</div>
 				{isLoading || isRefetching ? (
 					<p>Loading entry...</p>

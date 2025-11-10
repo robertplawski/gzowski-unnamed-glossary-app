@@ -9,13 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WotdRouteImport } from './routes/wotd'
 import { Route as SuccessRouteImport } from './routes/success'
 import { Route as RandomRouteImport } from './routes/random'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GlossaryRouteImport } from './routes/glossary'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ChallengingRouteImport } from './routes/challenging'
 import { Route as IndexRouteImport } from './routes/index'
 
+const WotdRoute = WotdRouteImport.update({
+  id: '/wotd',
+  path: '/wotd',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SuccessRoute = SuccessRouteImport.update({
   id: '/success',
   path: '/success',
@@ -41,6 +48,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChallengingRoute = ChallengingRouteImport.update({
+  id: '/challenging',
+  path: '/challenging',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -49,61 +61,88 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/challenging': typeof ChallengingRoute
   '/dashboard': typeof DashboardRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
   '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
+  '/wotd': typeof WotdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/challenging': typeof ChallengingRoute
   '/dashboard': typeof DashboardRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
   '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
+  '/wotd': typeof WotdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/challenging': typeof ChallengingRoute
   '/dashboard': typeof DashboardRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
   '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
+  '/wotd': typeof WotdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/challenging'
     | '/dashboard'
     | '/glossary'
     | '/login'
     | '/random'
     | '/success'
+    | '/wotd'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/glossary' | '/login' | '/random' | '/success'
+  to:
+    | '/'
+    | '/challenging'
+    | '/dashboard'
+    | '/glossary'
+    | '/login'
+    | '/random'
+    | '/success'
+    | '/wotd'
   id:
     | '__root__'
     | '/'
+    | '/challenging'
     | '/dashboard'
     | '/glossary'
     | '/login'
     | '/random'
     | '/success'
+    | '/wotd'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChallengingRoute: typeof ChallengingRoute
   DashboardRoute: typeof DashboardRoute
   GlossaryRoute: typeof GlossaryRoute
   LoginRoute: typeof LoginRoute
   RandomRoute: typeof RandomRoute
   SuccessRoute: typeof SuccessRoute
+  WotdRoute: typeof WotdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wotd': {
+      id: '/wotd'
+      path: '/wotd'
+      fullPath: '/wotd'
+      preLoaderRoute: typeof WotdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/success': {
       id: '/success'
       path: '/success'
@@ -139,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/challenging': {
+      id: '/challenging'
+      path: '/challenging'
+      fullPath: '/challenging'
+      preLoaderRoute: typeof ChallengingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -151,11 +197,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChallengingRoute: ChallengingRoute,
   DashboardRoute: DashboardRoute,
   GlossaryRoute: GlossaryRoute,
   LoginRoute: LoginRoute,
   RandomRoute: RandomRoute,
   SuccessRoute: SuccessRoute,
+  WotdRoute: WotdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

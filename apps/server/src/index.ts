@@ -12,12 +12,21 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
 const app = new Hono();
+const origins = [
+	env.CORS_ORIGIN,
+	"https://dev.gzowski-unnamed-glossary-app.pages.dev",
+	".gzowski-unnamed-glossary-app.pages.dev",
+].filter((v) => v) as string[];
 
 app.use(logger());
 app.use(
 	"/*",
 	cors({
-		origin: env.CORS_ORIGIN || "",
+		origin: (origin) => {
+			if (origins.includes(origin)) return origin;
+			if (origins.some((allowedOrigin) => origin.endsWith(allowedOrigin)))
+				return origin;
+		},
 		allowMethods: ["GET", "POST", "OPTIONS"],
 		allowHeaders: ["Content-Type", "Authorization"],
 		credentials: true,
@@ -74,5 +83,14 @@ app.use("/*", async (c, next) => {
 app.get("/", (c) => {
 	return c.text("OK");
 });
+
+if (env.NODE_ENV !== "production") {
+	app.get("/cors", (c) => {
+		return c.json({
+			message: "sup",
+			origins,
+		});
+	});
+}
 
 export default app;

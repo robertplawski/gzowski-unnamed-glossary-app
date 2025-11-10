@@ -10,8 +10,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {Label} from "@/components/ui/label";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {
 	Select,
 	SelectContent,
@@ -19,10 +19,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Plus, Trash2, Edit3 } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@/utils/orpc";
+import {Alert, AlertDescription} from "@/components/ui/alert";
+import {Loader2, Plus, Trash2, Edit3} from "lucide-react";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import {orpc} from "@/utils/orpc";
 
 interface DictionarySelectProps {
 	dictionaries: any;
@@ -57,18 +57,18 @@ const DictionarySelect = ({
 export default function DictionaryAdminForm() {
 	const queryClient = useQueryClient();
 	const [activeTab, setActiveTab] = useState("dictionary");
-	const [message, setMessage] = useState({ type: "", text: "" });
+	const [message, setMessage] = useState({type: "", text: ""});
 
 	// Fetch dictionaries for the entry form - Get the query options object
 	const dictionaryQueryOptions = orpc.dictionary.getAll.queryOptions();
-	const { data: dictionaries = [], isLoading: dictionariesLoading } = useQuery(
-		dictionaryQueryOptions, // Use the options object directly
+	const {data: dictionaries = [], isLoading: dictionariesLoading} = useQuery(
+		dictionaryQueryOptions // Use the options object directly
 	);
 
 	// Fetch entries for the edit entries tab - Get the query options object
 	const entryQueryOptions = orpc.entry.getAll.queryOptions();
-	const { data: entries = [], isLoading: entriesLoading } = useQuery(
-		entryQueryOptions, // Use the options object directly
+	const {data: entries = [], isLoading: entriesLoading} = useQuery(
+		entryQueryOptions // Use the options object directly
 	);
 
 	// Dictionary form state
@@ -100,8 +100,8 @@ export default function DictionaryAdminForm() {
 			queryClient.invalidateQueries({
 				queryKey: dictionaryQueryOptions.queryKey,
 			});
-			setMessage({ type: "success", text: "Dictionary created successfully!" });
-			setDictionaryForm({ id: "", name: "", description: "" });
+			setMessage({type: "success", text: "Dictionary created successfully!"});
+			setDictionaryForm({id: "", name: "", description: ""});
 		},
 		onError: (error: any) => {
 			setMessage({
@@ -118,8 +118,8 @@ export default function DictionaryAdminForm() {
 			queryClient.invalidateQueries({
 				queryKey: dictionaryQueryOptions.queryKey,
 			});
-			setMessage({ type: "success", text: "Dictionary updated successfully!" });
-			setDictionaryForm({ id: "", name: "", description: "" });
+			setMessage({type: "success", text: "Dictionary updated successfully!"});
+			setDictionaryForm({id: "", name: "", description: ""});
 			setIsEditingDictionary(false);
 		},
 		onError: (error: any) => {
@@ -137,7 +137,7 @@ export default function DictionaryAdminForm() {
 			queryClient.invalidateQueries({
 				queryKey: dictionaryQueryOptions.queryKey,
 			});
-			setMessage({ type: "success", text: "Dictionary deleted successfully!" });
+			setMessage({type: "success", text: "Dictionary deleted successfully!"});
 		},
 		onError: (error: any) => {
 			setMessage({
@@ -152,8 +152,8 @@ export default function DictionaryAdminForm() {
 		...orpc.entry.create.mutationOptions(),
 		onSuccess: () => {
 			// Invalidate using the exact query key from the query options
-			queryClient.invalidateQueries({ queryKey: entryQueryOptions.queryKey });
-			setMessage({ type: "success", text: "Entry created successfully!" });
+			queryClient.invalidateQueries({queryKey: entryQueryOptions.queryKey});
+			setMessage({type: "success", text: "Entry created successfully!"});
 			setEntryForm({
 				id: "",
 				dictionaryId: entryForm.dictionaryId,
@@ -177,8 +177,8 @@ export default function DictionaryAdminForm() {
 		...orpc.entry.update.mutationOptions(),
 		onSuccess: () => {
 			// Invalidate using the exact query key from the query options
-			queryClient.invalidateQueries({ queryKey: entryQueryOptions.queryKey });
-			setMessage({ type: "success", text: "Entry updated successfully!" });
+			queryClient.invalidateQueries({queryKey: entryQueryOptions.queryKey});
+			setMessage({type: "success", text: "Entry updated successfully!"});
 			setEntryForm({
 				id: "",
 				dictionaryId: "",
@@ -203,8 +203,8 @@ export default function DictionaryAdminForm() {
 		...orpc.entry.delete.mutationOptions(),
 		onSuccess: () => {
 			// Invalidate using the exact query key from the query options
-			queryClient.invalidateQueries({ queryKey: entryQueryOptions.queryKey });
-			setMessage({ type: "success", text: "Entry deleted successfully!" });
+			queryClient.invalidateQueries({queryKey: entryQueryOptions.queryKey});
+			setMessage({type: "success", text: "Entry deleted successfully!"});
 		},
 		onError: (error: any) => {
 			setMessage({
@@ -217,7 +217,7 @@ export default function DictionaryAdminForm() {
 	const handleDictionarySubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!dictionaryForm.name.trim()) {
-			setMessage({ type: "error", text: "Dictionary name is required" });
+			setMessage({type: "error", text: "Dictionary name is required"});
 			return;
 		}
 
@@ -238,11 +238,11 @@ export default function DictionaryAdminForm() {
 	const handleEntrySubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!entryForm.dictionaryId) {
-			setMessage({ type: "error", text: "Please select a dictionary" });
+			setMessage({type: "error", text: "Please select a dictionary"});
 			return;
 		}
 		if (!entryForm.word.trim()) {
-			setMessage({ type: "error", text: "Word is required" });
+			setMessage({type: "error", text: "Word is required"});
 			return;
 		}
 
@@ -283,10 +283,10 @@ export default function DictionaryAdminForm() {
 	const handleDeleteDictionary = (id: string) => {
 		if (
 			window.confirm(
-				"Are you sure you want to delete this dictionary? This will also delete all entries in this dictionary.",
+				"Are you sure you want to delete this dictionary? This will also delete all entries in this dictionary."
 			)
 		) {
-			deleteDictionary.mutate({ id });
+			deleteDictionary.mutate({id});
 		}
 	};
 
@@ -307,12 +307,12 @@ export default function DictionaryAdminForm() {
 
 	const handleDeleteEntry = (id: string) => {
 		if (window.confirm("Are you sure you want to delete this entry?")) {
-			deleteEntry.mutate({ id });
+			deleteEntry.mutate({id});
 		}
 	};
 
 	const resetDictionaryForm = () => {
-		setDictionaryForm({ id: "", name: "", description: "" });
+		setDictionaryForm({id: "", name: "", description: ""});
 		setIsEditingDictionary(false);
 	};
 
@@ -375,21 +375,23 @@ export default function DictionaryAdminForm() {
 		}
 	};
 	return (
-		<div className="container p-6 sm:p-12 mx-auto max-w-6xl">
-			<div className="flex flex-col gap-4 mb-6">
-				<h1 className="text-3xl font-bold">Dictionary Administration</h1>
-				<p>Create and manage dictionaries and entries</p>
+		<div className="container px-4 py-4 sm:p-6 md:p-12 mx-auto max-w-6xl">
+			<div className="flex flex-col gap-3 mb-4 sm:mb-6">
+				<h1 className="text-2xl sm:text-3xl font-bold">
+					Dictionary Administration
+				</h1>
+				<p className="text-sm sm:text-base">
+					Create and manage dictionaries and entries
+				</p>
 			</div>
 
 			{message.text && (
 				<Alert
-					className={`mb-6 ${message.type === "success" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}
-				>
+					className={`mb-6 ${message.type === "success" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
 					<AlertDescription
 						className={
 							message.type === "success" ? "text-green-800" : "text-red-800"
-						}
-					>
+						}>
 						{message.text}
 					</AlertDescription>
 				</Alert>
@@ -422,7 +424,7 @@ export default function DictionaryAdminForm() {
 						</CardHeader>
 						<CardContent>
 							<form onSubmit={handleDictionarySubmit} className="space-y-4">
-								<div className="space-y-2">
+								<div className="space-y-1 sm:space-y-2">
 									<Label htmlFor="dict-name">Dictionary Name *</Label>
 									<Input
 										id="dict-name"
@@ -435,10 +437,11 @@ export default function DictionaryAdminForm() {
 											})
 										}
 										required
+										className="min-h-[40px]"
 									/>
 								</div>
 
-								<div className="space-y-2">
+								<div className="space-y-1 sm:space-y-2">
 									<Label htmlFor="dict-description">Description</Label>
 									<Textarea
 										id="dict-description"
@@ -451,17 +454,17 @@ export default function DictionaryAdminForm() {
 											})
 										}
 										rows={3}
+										className="min-h-[80px]"
 									/>
 								</div>
 
-								<div className="flex gap-2">
+								<div className="flex flex-col sm:flex-row gap-2">
 									<Button
 										type="submit"
 										disabled={
 											createDictionary.isPending || updateDictionary.isPending
 										}
-										className="flex-1"
-									>
+										className="flex-1 min-h-[44px]">
 										{createDictionary.isPending ||
 										updateDictionary.isPending ? (
 											<>
@@ -486,8 +489,7 @@ export default function DictionaryAdminForm() {
 											disabled={
 												createDictionary.isPending || updateDictionary.isPending
 											}
-											className="flex-1"
-										>
+											className="flex-1">
 											Cancel
 										</Button>
 									)}
@@ -519,12 +521,17 @@ export default function DictionaryAdminForm() {
 									{dictionaries.map((dict: any) => (
 										<div
 											key={dict.id}
-											className="border rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
-										>
-											<div>
-												<h3 className="font-semibold">{dict.name}</h3>
+											className="border rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3">
+											<div className="w-full sm:w-auto">
+												<h3
+													className="font-semibold truncate max-w-[200px] sm:max-w-[300px]"
+													title={dict.name}>
+													{dict.name}
+												</h3>
 												{dict.description && (
-													<p className="text-sm text-gray-600 mt-1">
+													<p
+														className="text-sm text-gray-600 mt-1 truncate max-w-[250px] sm:max-w-[350px]"
+														title={dict.description}>
 														{dict.description}
 													</p>
 												)}
@@ -532,12 +539,12 @@ export default function DictionaryAdminForm() {
 													{dict.entryCount || 0} entries
 												</p>
 											</div>
-											<div className="flex gap-2">
+											<div className="flex gap-2 w-full sm:w-auto justify-end mt-2 sm:mt-0">
 												<Button
 													variant="outline"
 													size="sm"
 													onClick={() => handleEditDictionary(dict)}
-												>
+													className="min-h-[36px] min-w-[70px]">
 													<Edit3 className="h-4 w-4 mr-2" />
 													Edit
 												</Button>
@@ -545,7 +552,7 @@ export default function DictionaryAdminForm() {
 													variant="destructive"
 													size="sm"
 													onClick={() => handleDeleteDictionary(dict.id)}
-												>
+													className="min-h-[36px] min-w-[40px]">
 													<Trash2 className="h-4 w-4" />
 												</Button>
 											</div>
@@ -582,21 +589,22 @@ export default function DictionaryAdminForm() {
 									/>
 								</div>
 
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-									<div className="space-y-2">
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+									<div className="space-y-1 sm:space-y-2">
 										<Label htmlFor="entry-word">Word *</Label>
 										<Input
 											id="entry-word"
 											placeholder="e.g., hello, algorithm"
 											value={entryForm.word}
 											onChange={(e) =>
-												setEntryForm({ ...entryForm, word: e.target.value })
+												setEntryForm({...entryForm, word: e.target.value})
 											}
 											required
+											className="min-h-[40px]"
 										/>
 									</div>
 
-									<div className="space-y-2">
+									<div className="space-y-1 sm:space-y-2">
 										<Label htmlFor="entry-translation">Translation</Label>
 										<Input
 											id="entry-translation"
@@ -608,12 +616,13 @@ export default function DictionaryAdminForm() {
 													translation: e.target.value,
 												})
 											}
+											className="min-h-[40px]"
 										/>
 									</div>
 								</div>
 
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-									<div className="space-y-2">
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+									<div className="space-y-1 sm:space-y-2">
 										<Label htmlFor="entry-pos">Part of Speech</Label>
 										<Input
 											id="entry-pos"
@@ -625,10 +634,11 @@ export default function DictionaryAdminForm() {
 													partOfSpeech: e.target.value,
 												})
 											}
+											className="min-h-[40px]"
 										/>
 									</div>
 
-									<div className="space-y-2">
+									<div className="space-y-1 sm:space-y-2">
 										<Label htmlFor="entry-pronunciation">Pronunciation</Label>
 										<Input
 											id="entry-pronunciation"
@@ -640,42 +650,44 @@ export default function DictionaryAdminForm() {
 													pronunciation: e.target.value,
 												})
 											}
+											className="min-h-[40px]"
 										/>
 									</div>
 								</div>
 
-								<div className="space-y-2">
+								<div className="space-y-1 sm:space-y-2">
 									<Label htmlFor="entry-example">Example</Label>
 									<Textarea
 										id="entry-example"
 										placeholder="Example sentence using this word"
 										value={entryForm.example}
 										onChange={(e) =>
-											setEntryForm({ ...entryForm, example: e.target.value })
+											setEntryForm({...entryForm, example: e.target.value})
 										}
 										rows={2}
+										className="min-h-[60px]"
 									/>
 								</div>
 
-								<div className="space-y-2">
+								<div className="space-y-1 sm:space-y-2">
 									<Label htmlFor="entry-notes">Notes</Label>
 									<Textarea
 										id="entry-notes"
 										placeholder="Additional notes or information"
 										value={entryForm.notes}
 										onChange={(e) =>
-											setEntryForm({ ...entryForm, notes: e.target.value })
+											setEntryForm({...entryForm, notes: e.target.value})
 										}
 										rows={3}
+										className="min-h-[80px]"
 									/>
 								</div>
 
-								<div className="flex gap-2">
+								<div className="flex flex-col sm:flex-row gap-2">
 									<Button
 										type="submit"
 										disabled={createEntry.isPending || updateEntry.isPending}
-										className="flex-1"
-									>
+										className="flex-1 min-h-[44px]">
 										{createEntry.isPending || updateEntry.isPending ? (
 											<>
 												<Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -695,8 +707,7 @@ export default function DictionaryAdminForm() {
 											variant="outline"
 											onClick={resetEntryForm}
 											disabled={createEntry.isPending || updateEntry.isPending}
-											className="flex-1"
-										>
+											className="flex-1">
 											Cancel
 										</Button>
 									)}
@@ -727,31 +738,36 @@ export default function DictionaryAdminForm() {
 								<div className="space-y-4">
 									{entries.map((entry: any) => {
 										const dictionary = dictionaries.find(
-											(d: any) => d.id === entry.dictionaryId,
+											(d: any) => d.id === entry.dictionaryId
 										);
 										return (
 											<div
 												key={entry.id}
-												className="border rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
-											>
-												<div>
-													<h3 className="font-semibold">{entry.word}</h3>
-													<p className="text-sm text-gray-600">
+												className="border rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3">
+												<div className="w-full sm:w-auto">
+													<h3
+														className="font-semibold truncate max-w-[200px] sm:max-w-[300px]"
+														title={entry.word}>
+														{entry.word}
+													</h3>
+													<p className="text-sm text-gray-600 truncate max-w-[250px] sm:max-w-[350px]">
 														{dictionary?.name || "Unknown Dictionary"} •{" "}
 														{entry.partOfSpeech || "N/A"}
 													</p>
 													{entry.translation && (
-														<p className="text-sm">
+														<p
+															className="text-sm truncate max-w-[250px] sm:max-w-[350px]"
+															title={`Translation: ${entry.translation}`}>
 															Translation: {entry.translation}
 														</p>
 													)}
 												</div>
-												<div className="flex gap-2">
+												<div className="flex gap-2 w-full sm:w-auto justify-end mt-2 sm:mt-0">
 													<Button
 														variant="outline"
 														size="sm"
 														onClick={() => handleEditEntry(entry)}
-													>
+														className="min-h-[36px] min-w-[70px]">
 														<Edit3 className="h-4 w-4 mr-2" />
 														Edit
 													</Button>
@@ -759,7 +775,7 @@ export default function DictionaryAdminForm() {
 														variant="destructive"
 														size="sm"
 														onClick={() => handleDeleteEntry(entry.id)}
-													>
+														className="min-h-[36px] min-w-[40px]">
 														<Trash2 className="h-4 w-4" />
 													</Button>
 												</div>

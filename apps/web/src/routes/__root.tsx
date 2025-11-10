@@ -18,6 +18,7 @@ import {
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import "../index.css";
 import Footer from "@/components/footer";
+import MobileBottomNav from "@/components/mobile-bottom-nav";
 
 export interface RouterAppContext {
 	orpc: typeof orpc;
@@ -75,11 +76,14 @@ function RootComponent() {
 				disableTransitionOnChange
 				storageKey="vite-ui-theme"
 			>
-				<div className="grid grid-rows-[auto_1fr] min-h-svh">
-					<Header />
-					{isFetching ? <Loader /> : <Outlet />}
-					<Footer />
-				</div>
+                <div className="grid grid-rows-[auto_1fr_auto] min-h-svh">
+                    <Header />
+                    <div className="pb-20 md:pb-0">
+                        {isFetching ? <Loader /> : <Outlet />}
+                    </div>
+                    <Footer />
+                    <MobileBottomNav />
+                </div>
 				<Toaster richColors />
 			</ThemeProvider>
 			<TanStackRouterDevtools position="bottom-left" />
