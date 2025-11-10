@@ -14,17 +14,19 @@ import { logger } from "hono/logger";
 const app = new Hono();
 const origins = [
 	env.CORS_ORIGIN,
-	env.WORKERS_CI_BRANCH
-		? `https://${env.WORKERS_CI_BRANCH}.gzowski-unnamed-glossary-app.pages.dev`
-		: null,
 	"https://dev.gzowski-unnamed-glossary-app.pages.dev",
-].filter((v) => v);
+	".gzowski-unnamed-glossary-app.pages.dev",
+].filter((v) => v) as string[];
 
 app.use(logger());
 app.use(
 	"/*",
 	cors({
-		origin: origins,
+		origin: (origin) => {
+			if (origins.includes(origin)) return origin;
+			if (origins.some((allowedOrigin) => origin.endsWith(allowedOrigin)))
+				return origin;
+		},
 		allowMethods: ["GET", "POST", "OPTIONS"],
 		allowHeaders: ["Content-Type", "Authorization"],
 		credentials: true,

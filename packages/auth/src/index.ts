@@ -11,13 +11,19 @@ import * as schema from "@gzowski-unnamed-glossary-app/db/schema/auth";
 import { env } from "cloudflare:workers";
 import { openAPI } from "better-auth/plugins";
 
+const isProd = env.NODE_ENV === "production";
+
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
 		provider: "sqlite",
-
 		schema: schema,
 	}),
-	trustedOrigins: [env.CORS_ORIGIN, "mybettertapp://", "exp://"],
+	trustedOrigins: [
+		"https://*.gzowski-unnamed-glossary-app.pages.dev",
+		env.CORS_ORIGIN,
+		"mybettertapp://",
+		"exp://",
+	],
 	emailAndPassword: {
 		enabled: true,
 	},
@@ -35,13 +41,14 @@ export const auth = betterAuth({
 			sameSite: "none",
 			secure: true,
 			httpOnly: true,
+			partitioned: true,
 		},
 		// uncomment crossSubDomainCookies setting when ready to deploy and replace <your-workers-subdomain> with your actual workers subdomain
 		// https://developers.cloudflare.com/workers/wrangler/configuration/#workersdev
-		// crossSubDomainCookies: {
-		//   enabled: true,
-		//   domain: "<your-workers-subdomain>",
-		// },
+		/*crossSubDomainCookies: {
+			enabled: true,
+			domain: "rp8.workers.dev",
+		},*/
 	},
 	plugins: [
 		adminPlugin({

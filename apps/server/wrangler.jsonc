@@ -4,10 +4,51 @@
 	"compatibility_date": "2025-06-15",
 	"compatibility_flags": ["nodejs_compat"],
 	"vars": {
-		"NODE_ENV": "production"
+
+		"NODE_ENV": "production",
+    "CORS_ORIGIN":"https://guga.eksabajt.pl"
 		// Add public environment variables here
 		// Example: "CORS_ORIGIN": "https://your-domain.com"
 	},
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    }
+    },
+  "env":{
+
+    "preview":{
+      "vars":{
+        "CORS_ORIGIN":"https://dev.gzowski-unnamed-glossary-app.pages.dev",
+        "NODE_ENV":"development",
+        "BETTER_AUTH_URL":"https://dev.gzowski-unnamed-glossary-app.pages.dev",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "guga-dev",
+          "database_id": "a933119a-6fbd-4e8d-9c75-4bafed3647bf",
+          "preview_database_id": "a933119a-6fbd-4e8d-9c75-4bafed3647bf",
+          "migrations_dir": "../../packages/db/src/migrations/"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "WORD_CACHE",
+          "id": "fa3e7424b2ee4dc3914080ee3bf3341a"
+        }
+      ]
+    },
+    "production":{
+      "vars":{
+        "CORS_ORIGIN":"https://api-guga.eksabajt.pl",
+		"NODE_ENV": "production"
+      }
+    }
+  },
 	// For sensitive data, use:
 	// wrangler secret put SECRET_NAME
 	// Don't add secrets to "vars" - they're visible in the dashboard!
@@ -26,7 +67,8 @@
 			"database_name": "guga",
 			"database_id": "1be08cec-2238-4f8f-8f9d-7fdc6b480046",
 			"preview_database_id": "local-guga",
-			"migrations_dir": "../../packages/db/src/migrations"
+
+          "migrations_dir": "../../packages/db/src/migrations/"
 		}
 	],
   "kv_namespaces": [
@@ -34,5 +76,6 @@
       "binding": "WORD_CACHE",
       "id": "e905512efc904026879e72fe3c86c6da"
     }
-  ]
+  ],
+
 }
