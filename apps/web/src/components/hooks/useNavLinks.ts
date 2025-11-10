@@ -80,7 +80,7 @@ export const baseNavLinks: NavLink[] = [
 
 export const checkRoutePermissions = async (route: { route: any }) => {
 	const session = await authClient.getSession();
-	if (!session.data) {
+	if (!session?.data || !session?.data?.session) {
 		redirect({
 			to: "/login",
 			throw: true,
@@ -88,7 +88,10 @@ export const checkRoutePermissions = async (route: { route: any }) => {
 	}
 
 	if (
-		!(await checkNavLinkPermissions(getNavLinkForRoute(route.location.href)))
+		!(await checkNavLinkPermissions(
+			getNavLinkForRoute(route.location.href),
+			session?.data?.session,
+		))
 	) {
 		redirect({ to: "/login", throw: true });
 		return { session };
@@ -116,6 +119,7 @@ export const checkNavLinkPermissions = async (link: NavLink, session) => {
 		}
 		return data.success ? link : null;
 	} catch (error) {
+		console.error(error);
 		return null;
 	}
 };
@@ -135,7 +139,6 @@ export default function useNavLinks(quickLinkSize = 4) {
 	const [navLinks, setNavLinks] = useState<NavLink[]>();
 	const { data } = authClient.useSession();
 	const session = data?.session;
-	console.log(session);
 
 	useEffect(() => {
 		getNavLinks(session)
