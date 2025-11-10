@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import React, { ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,36 @@ import { Loader2, Plus, Trash2, Edit3 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/utils/orpc";
 
+interface DictionarySelectProps {
+	dictionaries: any;
+	value: string;
+	onValueChange: (value: string) => void;
+}
+
+const DictionarySelect = ({
+	dictionaries,
+	value,
+	onValueChange,
+}: DictionarySelectProps) => {
+	if (!dictionaries) {
+		return;
+	}
+	return (
+		<Select value={value} onValueChange={onValueChange}>
+			<SelectTrigger>
+				<SelectValue placeholder="Choose a dictionary" />
+			</SelectTrigger>
+			<SelectContent>
+				{dictionaries.map((dict: any) => (
+					<SelectItem key={dict.id} value={dict.id}>
+						{dict.name}
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
+	);
+};
+
 export default function DictionaryAdminForm() {
 	const queryClient = useQueryClient();
 	const [activeTab, setActiveTab] = useState("dictionary");
@@ -32,13 +62,13 @@ export default function DictionaryAdminForm() {
 	// Fetch dictionaries for the entry form - Get the query options object
 	const dictionaryQueryOptions = orpc.dictionary.getAll.queryOptions();
 	const { data: dictionaries = [], isLoading: dictionariesLoading } = useQuery(
-		dictionaryQueryOptions // Use the options object directly
+		dictionaryQueryOptions, // Use the options object directly
 	);
 
 	// Fetch entries for the edit entries tab - Get the query options object
 	const entryQueryOptions = orpc.entry.getAll.queryOptions();
 	const { data: entries = [], isLoading: entriesLoading } = useQuery(
-		entryQueryOptions // Use the options object directly
+		entryQueryOptions, // Use the options object directly
 	);
 
 	// Dictionary form state
@@ -253,7 +283,7 @@ export default function DictionaryAdminForm() {
 	const handleDeleteDictionary = (id: string) => {
 		if (
 			window.confirm(
-				"Are you sure you want to delete this dictionary? This will also delete all entries in this dictionary."
+				"Are you sure you want to delete this dictionary? This will also delete all entries in this dictionary.",
 			)
 		) {
 			deleteDictionary.mutate({ id });
@@ -308,7 +338,7 @@ export default function DictionaryAdminForm() {
 		if (!file) return;
 
 		const reader = new FileReader();
-		reader.onload = event => {
+		reader.onload = (event) => {
 			try {
 				const result = event.target?.result as string;
 				const jsonData = JSON.parse(result);
@@ -322,15 +352,22 @@ export default function DictionaryAdminForm() {
 		reader.readAsText(file);
 	};
 
+	const { mutateAsync: importJson } = useMutation(
+		orpc.entry.importFromJson.mutationOptions(),
+	);
+
 	const handleImport = async () => {
 		if (!importData) {
-			setImportStatus("⚠️ Najpierw wczytaj plik JSON");
+			setImportStatus("! Najpierw wczytaj plik JSON");
 			return;
 		}
 
 		try {
 			setImportStatus("⏳ Importowanie danych...");
-			await (orpc as any).entries.importJSON(importData);
+			await importJson({
+				dictionaryId: entryForm.dictionaryId,
+				jsonData: importData,
+			});
 			setImportStatus("🎉 Import zakończony sukcesem!");
 		} catch (err) {
 			console.error(err);
@@ -391,7 +428,7 @@ export default function DictionaryAdminForm() {
 										id="dict-name"
 										placeholder="e.g., English-Spanish, Technical Terms"
 										value={dictionaryForm.name}
-										onChange={e =>
+										onChange={(e) =>
 											setDictionaryForm({
 												...dictionaryForm,
 												name: e.target.value,
@@ -407,7 +444,7 @@ export default function DictionaryAdminForm() {
 										id="dict-description"
 										placeholder="Optional description of this dictionary"
 										value={dictionaryForm.description}
-										onChange={e =>
+										onChange={(e) =>
 											setDictionaryForm({
 												...dictionaryForm,
 												description: e.target.value,
@@ -536,23 +573,13 @@ export default function DictionaryAdminForm() {
 							<form onSubmit={handleEntrySubmit} className="space-y-4">
 								<div className="space-y-2">
 									<Label htmlFor="entry-dictionary">Select Dictionary *</Label>
-									<Select
+									<DictionarySelect
+										dictionaries={dictionaries}
 										value={entryForm.dictionaryId}
-										onValueChange={value =>
+										onValueChange={(value) =>
 											setEntryForm({ ...entryForm, dictionaryId: value })
 										}
-									>
-										<SelectTrigger id="entry-dictionary">
-											<SelectValue placeholder="Choose a dictionary" />
-										</SelectTrigger>
-										<SelectContent>
-											{dictionaries.map((dict: any) => (
-												<SelectItem key={dict.id} value={dict.id}>
-													{dict.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
+									/>
 								</div>
 
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -562,7 +589,7 @@ export default function DictionaryAdminForm() {
 											id="entry-word"
 											placeholder="e.g., hello, algorithm"
 											value={entryForm.word}
-											onChange={e =>
+											onChange={(e) =>
 												setEntryForm({ ...entryForm, word: e.target.value })
 											}
 											required
@@ -575,7 +602,7 @@ export default function DictionaryAdminForm() {
 											id="entry-translation"
 											placeholder="e.g., hola, algoritmo"
 											value={entryForm.translation}
-											onChange={e =>
+											onChange={(e) =>
 												setEntryForm({
 													...entryForm,
 													translation: e.target.value,
@@ -592,7 +619,7 @@ export default function DictionaryAdminForm() {
 											id="entry-pos"
 											placeholder="e.g., noun, verb, adjective"
 											value={entryForm.partOfSpeech}
-											onChange={e =>
+											onChange={(e) =>
 												setEntryForm({
 													...entryForm,
 													partOfSpeech: e.target.value,
@@ -607,7 +634,7 @@ export default function DictionaryAdminForm() {
 											id="entry-pronunciation"
 											placeholder="e.g., /həˈloʊ/, /ˈælɡəˌrɪðəm/"
 											value={entryForm.pronunciation}
-											onChange={e =>
+											onChange={(e) =>
 												setEntryForm({
 													...entryForm,
 													pronunciation: e.target.value,
@@ -623,7 +650,7 @@ export default function DictionaryAdminForm() {
 										id="entry-example"
 										placeholder="Example sentence using this word"
 										value={entryForm.example}
-										onChange={e =>
+										onChange={(e) =>
 											setEntryForm({ ...entryForm, example: e.target.value })
 										}
 										rows={2}
@@ -636,7 +663,7 @@ export default function DictionaryAdminForm() {
 										id="entry-notes"
 										placeholder="Additional notes or information"
 										value={entryForm.notes}
-										onChange={e =>
+										onChange={(e) =>
 											setEntryForm({ ...entryForm, notes: e.target.value })
 										}
 										rows={3}
@@ -700,7 +727,7 @@ export default function DictionaryAdminForm() {
 								<div className="space-y-4">
 									{entries.map((entry: any) => {
 										const dictionary = dictionaries.find(
-											(d: any) => d.id === entry.dictionaryId
+											(d: any) => d.id === entry.dictionaryId,
 										);
 										return (
 											<div
@@ -753,35 +780,40 @@ export default function DictionaryAdminForm() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<div>
-								<form className="gap-4 border-1 p-3">
-									<Input
-										type="file"
-										id="fileInput"
-										accept=".json"
-										onChange={handleFileChange}
-										className="hidden"
-									/>
-									<Label
-										htmlFor="fileInput"
-										className="text-xl font-bold flex flex-col"
-									>
-										<p>Import file</p>
-										<p className="mt-2 text-sm text-gray-600">{"File name"}</p>
-									</Label>
-								</form>
-								<Button className="mt-4" onClick={handleImport}>
-									Send data.
-								</Button>
-								{importData && (
-									<p className="mt-3 text-sm text-green-400">
-										Wczytano {Object.keys(importData).length} elementów.
-									</p>
-								)}
-								{importStatus && (
-									<p className="mt-4 text-sm text-gray-300">{importStatus}</p>
-								)}
-							</div>
+							<DictionarySelect
+								dictionaries={dictionaries}
+								value={entryForm.dictionaryId}
+								onValueChange={(value) =>
+									setEntryForm({ ...entryForm, dictionaryId: value })
+								}
+							/>
+							<form className="mt-4 gap-4 border-1 p-3">
+								<Input
+									type="file"
+									id="fileInput"
+									accept=".json"
+									onChange={handleFileChange}
+									className="hidden"
+								/>
+								<Label
+									htmlFor="fileInput"
+									className="text-xl font-bold flex flex-col"
+								>
+									<p>Import file</p>
+									<p className="mt-2 text-sm text-gray-600">{"File name"}</p>
+								</Label>
+							</form>
+							<Button className="mt-4" onClick={handleImport}>
+								Send data.
+							</Button>
+							{importData?.metadata?.total_matches && (
+								<p className="mt-3 text-sm text-green-400">
+									Wczytano {importData?.metadata?.total_matches} elementów.
+								</p>
+							)}
+							{importStatus && (
+								<p className="mt-4 text-sm text-gray-300">{importStatus}</p>
+							)}
 						</CardContent>
 					</Card>
 				</TabsContent>
