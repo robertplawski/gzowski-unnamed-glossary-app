@@ -37,6 +37,7 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -675,7 +676,7 @@ export default function ModeratorForm() {
                                         handleApproveComment(comment.id)
                                       }
                                     >
-                                      Approve
+                                      <CheckCircle className="h-4 w-4" />
                                     </Button>
                                   </PermissionWrapper>
                                   <PermissionWrapper
@@ -688,7 +689,7 @@ export default function ModeratorForm() {
                                         handleRejectComment(comment.id)
                                       }
                                     >
-                                      Reject
+                                      <XCircle className="h-4 w-4" />
                                     </Button>
                                   </PermissionWrapper>
                                   <PermissionWrapper
@@ -701,7 +702,7 @@ export default function ModeratorForm() {
                                         handleDeleteComment(comment.id)
                                       }
                                     >
-                                      Delete
+                                      <Trash2 className="h-4 w-4" />
                                     </Button>
                                   </PermissionWrapper>
                                 </div>
