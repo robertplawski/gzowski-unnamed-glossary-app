@@ -1,0 +1,1 @@
+ALTER TABLE `comment` ADD `moderation_status` text;

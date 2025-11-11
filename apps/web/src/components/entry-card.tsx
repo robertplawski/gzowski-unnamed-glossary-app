@@ -10,6 +10,9 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  LucideCheck,
+  LucideCross,
+  LucideHourglass,
 } from "lucide-react";
 import { DictionaryEntry } from "./dictionary-entry";
 import { Button } from "./ui/button";
@@ -90,9 +93,27 @@ function CommentSection({ entry }: { entry: any }) {
                 <span className="font-semibold text-sm">
                   {comment.user?.name || "Anonymous"}
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   {new Date(comment.createdAt).toLocaleDateString()}
                 </span>
+                {comment.moderationStatus === "verified" && (
+                  <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <LucideCheck className="h-3 w-3" />
+                    Verified
+                  </span>
+                )}
+                {comment.moderationStatus === "rejected" && (
+                  <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <LucideCross className="h-3 w-3" />
+                    Rejected
+                  </span>
+                )}
+                {comment.moderationStatus === "pending" && (
+                  <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <LucideHourglass className="h-3 w-3" />
+                    Pending
+                  </span>
+                )}
               </div>
               <p className="text-sm">{comment.text}</p>
             </div>
@@ -312,21 +333,6 @@ function EntryInteractions({ entry }: { entry: any }) {
               </span>
             </Button>
           </div>
-
-          <div className="flex-1 md:flex-none" />
-          <Button
-            variant="outline"
-            onClick={() => setShowComments(!showComments)}
-          >
-            <LucideMessageCircle />
-            {comments?.length || 0}
-            <span className="hidden sm:block">Comments</span>
-            {showComments ? (
-              <LucideChevronUp className="ml-1 h-4 w-4" />
-            ) : (
-              <LucideChevronDown className="ml-1 h-4 w-4" />
-            )}
-          </Button>
 
           <div className="flex-1" />
           <Button variant="outline">

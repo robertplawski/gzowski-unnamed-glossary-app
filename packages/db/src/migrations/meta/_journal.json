@@ -15,6 +15,20 @@
       "when": 1761169492980,
       "tag": "0001_familiar_cassandra_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1762857833272,
+      "tag": "0002_absent_norman_osborn",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1762857902245,
+      "tag": "0003_plain_doctor_octopus",
+      "breakpoints": true
     }
   ]
 }

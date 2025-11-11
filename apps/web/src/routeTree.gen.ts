@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WotdRouteImport } from './routes/wotd'
 import { Route as SuccessRouteImport } from './routes/success'
 import { Route as RandomRouteImport } from './routes/random'
+import { Route as ModerationDashboardRouteImport } from './routes/moderation-dashboard'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GlossaryRouteImport } from './routes/glossary'
 import { Route as ChallengingRouteImport } from './routes/challenging'
@@ -31,6 +32,11 @@ const SuccessRoute = SuccessRouteImport.update({
 const RandomRoute = RandomRouteImport.update({
   id: '/random',
   path: '/random',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModerationDashboardRoute = ModerationDashboardRouteImport.update({
+  id: '/moderation-dashboard',
+  path: '/moderation-dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/challenging': typeof ChallengingRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
+  '/moderation-dashboard': typeof ModerationDashboardRoute
   '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
   '/wotd': typeof WotdRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/challenging': typeof ChallengingRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
+  '/moderation-dashboard': typeof ModerationDashboardRoute
   '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
   '/wotd': typeof WotdRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/challenging': typeof ChallengingRoute
   '/glossary': typeof GlossaryRoute
   '/login': typeof LoginRoute
+  '/moderation-dashboard': typeof ModerationDashboardRoute
   '/random': typeof RandomRoute
   '/success': typeof SuccessRoute
   '/wotd': typeof WotdRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/challenging'
     | '/glossary'
     | '/login'
+    | '/moderation-dashboard'
     | '/random'
     | '/success'
     | '/wotd'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/challenging'
     | '/glossary'
     | '/login'
+    | '/moderation-dashboard'
     | '/random'
     | '/success'
     | '/wotd'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/challenging'
     | '/glossary'
     | '/login'
+    | '/moderation-dashboard'
     | '/random'
     | '/success'
     | '/wotd'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   ChallengingRoute: typeof ChallengingRoute
   GlossaryRoute: typeof GlossaryRoute
   LoginRoute: typeof LoginRoute
+  ModerationDashboardRoute: typeof ModerationDashboardRoute
   RandomRoute: typeof RandomRoute
   SuccessRoute: typeof SuccessRoute
   WotdRoute: typeof WotdRoute
@@ -155,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/random'
       fullPath: '/random'
       preLoaderRoute: typeof RandomRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/moderation-dashboard': {
+      id: '/moderation-dashboard'
+      path: '/moderation-dashboard'
+      fullPath: '/moderation-dashboard'
+      preLoaderRoute: typeof ModerationDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChallengingRoute: ChallengingRoute,
   GlossaryRoute: GlossaryRoute,
   LoginRoute: LoginRoute,
+  ModerationDashboardRoute: ModerationDashboardRoute,
   RandomRoute: RandomRoute,
   SuccessRoute: SuccessRoute,
   WotdRoute: WotdRoute,
