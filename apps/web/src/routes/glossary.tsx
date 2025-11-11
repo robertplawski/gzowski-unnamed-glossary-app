@@ -127,14 +127,16 @@ function RouteComponent() {
 										<p>
 											Average score: {searchResults.searchStats.averageScore}
 										</p>
-										<p>
-											Match types:{" "}
-											{Object.entries(
-												searchResults.searchStats.matchTypeDistribution
-											)
-												.map(([type, count]) => `${type} (${count})`)
-												.join(", ")}
-										</p>
+										{displayData.length > 0 && (
+											<p>
+												Match types:{" "}
+												{Object.entries(
+													searchResults.searchStats.matchTypeDistribution
+												)
+													.map(([type, count]) => `${type} (${count})`)
+													.join(", ")}
+											</p>
+										)}
 										<p>
 											Search time: {searchResults.searchStats.executionTime}ms
 										</p>
