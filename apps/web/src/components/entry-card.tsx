@@ -32,7 +32,7 @@ function CommentSection({ entry }: { entry: any }) {
   const [commentText, setCommentText] = useState("");
 
   const { data: comments, isLoading: commentsLoading } = useQuery(
-    orpc.comment.getByEntry.queryOptions({ input: { entryId: entry.id } })
+    orpc.comment.getByEntry.queryOptions({ input: { entryId: entry.id } }),
   );
 
   const { mutate: addComment, isPending: isAddingComment } = useMutation(
@@ -48,7 +48,7 @@ function CommentSection({ entry }: { entry: any }) {
       onError: (error) => {
         handleAuthRedirect(error);
       },
-    })
+    }),
   );
 
   const handleSubmitComment = (e: React.FormEvent) => {
@@ -74,7 +74,8 @@ function CommentSection({ entry }: { entry: any }) {
         <Button
           type="submit"
           disabled={!commentText.trim() || isAddingComment}
-          size="sm">
+          size="sm"
+        >
           <LucideSend className="h-4 w-4" />
         </Button>
       </form>
@@ -112,13 +113,13 @@ function EntryInteractions({ entry }: { entry: any }) {
   const [showComments, setShowComments] = useState(false);
 
   const { data: comments, isLoading: commentsLoading } = useQuery(
-    orpc.comment.getByEntry.queryOptions({ input: { entryId: entry.id } })
+    orpc.comment.getByEntry.queryOptions({ input: { entryId: entry.id } }),
   );
 
   const { data: votesData, isLoading: votesLoading } = useQuery(
     orpc.entryVote.getVote.queryOptions({
       input: { entryId: entry.id },
-    })
+    }),
   );
 
   const { mutate: vote } = useMutation(
@@ -133,7 +134,7 @@ function EntryInteractions({ entry }: { entry: any }) {
         const previousVote = queryClient.getQueryData(
           orpc.entryVote.getVote.queryOptions({
             input: { entryId },
-          }).queryKey
+          }).queryKey,
         );
 
         queryClient.setQueryData(
@@ -148,7 +149,7 @@ function EntryInteractions({ entry }: { entry: any }) {
               userVote: value,
               totalScore: old.totalScore + scoreDiff,
             };
-          }
+          },
         );
 
         return { previousVote, entryId };
@@ -159,7 +160,7 @@ function EntryInteractions({ entry }: { entry: any }) {
             orpc.entryVote.getVote.queryOptions({
               input: { entryId: context.entryId },
             }).queryKey,
-            context.previousVote
+            context.previousVote,
           );
         }
         handleAuthRedirect(error);
@@ -174,7 +175,7 @@ function EntryInteractions({ entry }: { entry: any }) {
           queryKey: orpc.entry.getSortedByVotes.queryOptions().queryKey,
         });
       },
-    })
+    }),
   );
 
   const { mutate: resetVote } = useMutation(
@@ -189,7 +190,7 @@ function EntryInteractions({ entry }: { entry: any }) {
         const previousVote = queryClient.getQueryData(
           orpc.entryVote.getVote.queryOptions({
             input: { entryId },
-          }).queryKey
+          }).queryKey,
         );
 
         queryClient.setQueryData(
@@ -204,7 +205,7 @@ function EntryInteractions({ entry }: { entry: any }) {
               userVote: 0,
               totalScore: old.totalScore + scoreDiff,
             };
-          }
+          },
         );
 
         return { previousVote, entryId };
@@ -215,7 +216,7 @@ function EntryInteractions({ entry }: { entry: any }) {
             orpc.entryVote.getVote.queryOptions({
               input: { entryId: context.entryId },
             }).queryKey,
-            context.previousVote
+            context.previousVote,
           );
         }
         handleAuthRedirect(error);
@@ -230,7 +231,7 @@ function EntryInteractions({ entry }: { entry: any }) {
           queryKey: orpc.entry.getSortedByVotes.queryOptions().queryKey,
         });
       },
-    })
+    }),
   );
 
   if (commentsLoading || votesLoading || !votesData) {
@@ -271,7 +272,8 @@ function EntryInteractions({ entry }: { entry: any }) {
                   ? resetVote({ entryId: entry.id })
                   : vote({ entryId: entry.id, value: 1 })
               }
-              className="min-w-[48px] min-h-[48px]">
+              className="min-w-[48px] min-h-[48px]"
+            >
               <LucideArrowUp />
             </Button>
 
@@ -285,13 +287,15 @@ function EntryInteractions({ entry }: { entry: any }) {
                   : vote({ entryId: entry.id, value: -1 })
               }
               variant={votesData?.userVote < 0 ? "default" : "outline"}
-              className="min-w-[48px] min-h-[48px]">
+              className="min-w-[48px] min-h-[48px]"
+            >
               <LucideArrowDown />
             </Button>
             <Button
               variant="outline"
               onClick={() => setShowComments(!showComments)}
-              className="min-w-[48px] min-h-[48px]">
+              className="min-w-[48px] min-h-[48px]"
+            >
               <LucideMessageCircle />
               <span className="md:inline hidden ml-1">
                 {comments?.length || 0} Comments
@@ -362,7 +366,8 @@ function EntryPronunciation({
   if (!(entry.remoteDictionaryEntry && entry.remoteDictionaryEntry.phonetics)) {
     return (
       <span
-        className={`text-muted-foreground ${isMobile ? "text-sm block mt-1" : "text-normal ml-3 inline-block"}`}>
+        className={`text-muted-foreground ${isMobile ? "text-sm block mt-1" : "text-normal ml-3 inline-block"}`}
+      >
         /{entry.pronunciation}/
       </span>
     );
@@ -373,31 +378,36 @@ function EntryPronunciation({
 
   return phonetics
     .sort(({ audio }: { audio?: string }) => (audio ? -1 : 1))
-    .map(({ text, audio }: { text?: string; audio?: string }, index: number) => (
-      <span
-        key={index}
-        className={
-          isMobile
-            ? "inline-flex items-center mt-1 min-h-[32px]"
-            : "inline-flex items-center"
-        }>
-        {audio && (
-          <Button
-            onClick={() => playAudio(audio)}
-            size={isMobile ? "icon" : "sm"}
-            variant="outline"
-            className={`${isMobile ? "h-6 w-6 mr-2" : "ml-2"} min-h-[32px] min-w-[32px]`}>
-            <LucideVolume2 className={isMobile ? "h-3 w-3" : ""} />
-          </Button>
-        )}
-        {text && (
-          <span
-            className={`text-muted-foreground ${isMobile ? "text-sm mr-3" : "text-normal ml-3"}`}>
-            {text}
-          </span>
-        )}
-      </span>
-    ));
+    .map(
+      ({ text, audio }: { text?: string; audio?: string }, index: number) => (
+        <span
+          key={index}
+          className={
+            isMobile
+              ? "inline-flex items-center mt-1 min-h-[32px]"
+              : "inline-flex items-center"
+          }
+        >
+          {audio && (
+            <Button
+              onClick={() => playAudio(audio)}
+              size={isMobile ? "icon" : "sm"}
+              variant="outline"
+              className={`${isMobile ? "h-6 w-6 mr-2" : "ml-2"} min-h-[32px] min-w-[32px]`}
+            >
+              <LucideVolume2 className={isMobile ? "h-3 w-3" : ""} />
+            </Button>
+          )}
+          {text && (
+            <span
+              className={`text-muted-foreground ${isMobile ? "text-sm mr-3" : "text-normal ml-3"}`}
+            >
+              {text}
+            </span>
+          )}
+        </span>
+      ),
+    );
 }
 
 export function EntryCard({ entry }: { entry: any }) {
@@ -436,7 +446,8 @@ export function EntryCard({ entry }: { entry: any }) {
           <Button
             variant={"outline"}
             onClick={() => setShowDefinitions((v) => !v)}
-            className="min-h-[48px]">
+            className="min-h-[48px]"
+          >
             {showDefinitions ? <ChevronUp /> : <ChevronDown />}
             <span>{showDefinitions ? "Hide" : "Show"} definition</span>
           </Button>
@@ -450,11 +461,11 @@ export function EntryCard({ entry }: { entry: any }) {
         )}
       </CardContent>
       <CardFooter>
-				<div className="flex flex-row flex-wrap gap-1 text-muted-foreground">
-					{entry.notes && <p>{entry.notes} </p>}
-    </div>
-  </CardFooter>
-    <EntryInteractions entry={entry} />
-		</Card >
-	);
+        <div className="flex flex-row flex-wrap gap-1 text-muted-foreground">
+          {entry.notes && <p>{entry.notes} </p>}
+        </div>
+      </CardFooter>
+      <EntryInteractions entry={entry} />
+    </Card>
+  );
 }
