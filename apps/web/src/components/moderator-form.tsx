@@ -4,7 +4,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "../components/ui/tabs";
-import { CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
@@ -22,7 +28,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
+import {
+  MoreHorizontal,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Filter,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+} from "lucide-react";
 import { useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
@@ -39,8 +54,38 @@ export default function ModeratorForm() {
   const [commentPage, setCommentPage] = useState(0);
   const [usersPerPage] = useState(10);
   const [commentsPerPage] = useState(10);
+  const [commentSortConfig, setCommentSortConfig] = useState<{
+    key: string;
+    direction: "asc" | "desc";
+  } | null>(null);
+  const [moderationStatusFilter, setModerationStatusFilter] = useState<
+    string | null
+  >(null);
   const queryClient = useQueryClient();
 
+  // Function to handle sorting
+  const requestSort = (key: string) => {
+    let direction: "asc" | "desc" = "asc";
+    if (
+      commentSortConfig &&
+      commentSortConfig.key === key &&
+      commentSortConfig.direction === "asc"
+    ) {
+      direction = "desc";
+    }
+    setCommentSortConfig({ key, direction });
+  };
+  // Function to get sort icon based on current sort configuration
+  const getSortIcon = (columnName: string) => {
+    if (!commentSortConfig || commentSortConfig.key !== columnName) {
+      return <ArrowUpDown className="ml-1 inline-block h-4 w-4" />;
+    }
+    return commentSortConfig.direction === "asc" ? (
+      <ArrowUp className="ml-1 inline-block h-4 w-4" />
+    ) : (
+      <ArrowDown className="ml-1 inline-block h-4 w-4" />
+    );
+  };
   // Fetch all users (for client-side pagination)
   const { data: usersResponse, isLoading: usersLoading } = useQuery({
     queryKey: ["users"],
@@ -54,39 +99,94 @@ export default function ModeratorForm() {
       });
       return data;
     },
-    });
-  
-    // Filter users based on search term
-    const filteredUsers = usersResponse?.users?.filter((user: any) =>
-      user.name?.toLowerCase().includes(searchUser.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchUser.toLowerCase()) ||
-      user.role?.toLowerCase().includes(searchUser.toLowerCase())
+  });
+
+  // Filter users based on search term
+  const filteredUsers =
+    usersResponse?.users?.filter(
+      (user: any) =>
+        user.name?.toLowerCase().includes(searchUser.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchUser.toLowerCase()) ||
+        user.role?.toLowerCase().includes(searchUser.toLowerCase()),
     ) || [];
-  
-    // Paginate filtered users
-    const paginatedUsers = filteredUsers.slice(
-      userPage * usersPerPage,
-      (userPage + 1) * usersPerPage
-    );
+
+  // Paginate filtered users
+  const paginatedUsers = filteredUsers.slice(
+    userPage * usersPerPage,
+    (userPage + 1) * usersPerPage,
+  );
 
   // Fetch comments
   const { data: commentsData, isLoading: commentsLoading } = useQuery({
     ...orpc.comment.getAll.queryOptions(),
     queryKey: ["comments"],
-    });
-  
-    // Filter comments based on search term
-    const filteredComments = commentsData?.filter(({ comment, user }: { comment: any; user: any }) =>
-      comment.text?.toLowerCase().includes(searchComment.toLowerCase()) ||
-      user?.name?.toLowerCase().includes(searchComment.toLowerCase()) ||
-      comment.moderationStatus?.toLowerCase().includes(searchComment.toLowerCase())
-    ) || [];
-  
-    // Paginate filtered comments
-    const paginatedComments = filteredComments.slice(
-      commentPage * commentsPerPage,
-      (commentPage + 1) * commentsPerPage
-    );
+  });
+
+  // Filter comments based on search term and moderation status
+  const filteredComments =
+    commentsData?.filter(({ comment, user }: { comment: any; user: any }) => {
+      // Apply search filter
+      const matchesSearch =
+        comment.text?.toLowerCase().includes(searchComment.toLowerCase()) ||
+        user?.name?.toLowerCase().includes(searchComment.toLowerCase()) ||
+        comment.moderationStatus
+          ?.toLowerCase()
+          .includes(searchComment.toLowerCase());
+
+      // Apply moderation status filter
+      const matchesStatus = moderationStatusFilter
+        ? comment.moderationStatus === moderationStatusFilter
+        : true;
+
+      return matchesSearch && matchesStatus;
+    }) || [];
+
+  // Sort filtered comments
+  const sortedComments = commentSortConfig
+    ? [...filteredComments].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (commentSortConfig.key) {
+        case "user":
+          aValue = a.user?.name?.toLowerCase() || "";
+          bValue = b.user?.name?.toLowerCase() || "";
+          break;
+        case "content":
+          aValue = a.comment.text?.toLowerCase() || "";
+          bValue = b.comment.text?.toLowerCase() || "";
+          break;
+        case "word":
+          aValue = a.entry?.word?.toLowerCase() || "";
+          bValue = b.entry?.word?.toLowerCase() || "";
+          break;
+        case "status":
+          aValue = a.comment.moderationStatus?.toLowerCase() || "";
+          bValue = b.comment.moderationStatus?.toLowerCase() || "";
+          break;
+        case "date":
+          aValue = new Date(a.comment.createdAt).getTime() || 0;
+          bValue = new Date(b.comment.createdAt).getTime() || 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) {
+        return commentSortConfig.direction === "asc" ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return commentSortConfig.direction === "asc" ? 1 : -1;
+      }
+      return 0;
+    })
+    : filteredComments;
+
+  // Paginate sorted comments
+  const paginatedComments = sortedComments.slice(
+    commentPage * commentsPerPage,
+    (commentPage + 1) * commentsPerPage,
+  );
   const handleBanUser = async (userId: string, isBanned: boolean) => {
     try {
       const session = await authClient.getSession();
@@ -231,344 +331,438 @@ export default function ModeratorForm() {
         </TabsList>
 
         <TabsContent value="users">
-          <CardHeader>
-            <CardTitle>Manage Users</CardTitle>
-            <CardDescription>View and manage user accounts</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <Input
-                  placeholder="Search users..."
-                  className="max-w-sm"
-                  value={searchUser}
-                  onChange={(e) => setSearchUser(e.target.value)}
-                />
+          <Card>
+            <CardHeader>
+              <CardTitle>Manage Users</CardTitle>
+              <CardDescription>View and manage user accounts</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <Input
+                    placeholder="Search users..."
+                    className="max-w-sm"
+                    value={searchUser}
+                    onChange={(e) => setSearchUser(e.target.value)}
+                  />
+                </div>
+                <PermissionWrapper permissions={{ user: ["create"] }}>
+                  <Button>Create User</Button>
+                </PermissionWrapper>
               </div>
-              <PermissionWrapper permissions={{ user: ["create"] }}>
-                <Button>Create User</Button>
-              </PermissionWrapper>
-            </div>
-            {usersLoading ? (
-              <div>Loading users...</div>
-            ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Joined</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                                      {paginatedUsers && paginatedUsers.length > 0 ? (
-                                        paginatedUsers.map((user: any) => (
-                        <TableRow key={user.id}>
-                          <TableCell>{user.name}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>{user.role || "user"}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={!user.banned ? "default" : "destructive"}
-                            >
-                              {!user.banned ? "active" : "banned"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {user.createdAt
-                              ? new Date(user.createdAt).toLocaleDateString()
-                              : "N/A"}
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>Edit User</DropdownMenuItem>
-                                <PermissionWrapper
-                                  permissions={{ user: ["ban"] }}
-                                >
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleBanUser(
-                                        user.id,
-                                        user.banned ?? false,
-                                      )
-                                    }
-                                  >
-                                    {user.banned ? "Unban User" : "Ban User"}
-                                  </DropdownMenuItem>
-                                </PermissionWrapper>
-                                <PermissionWrapper
-                                  permissions={{ user: ["update"] }}
-                                >
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <DropdownMenuItem>
-                                        Change Role
-                                      </DropdownMenuItem>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                      <DropdownMenuItem
-                                        onClick={() =>
-                                          handleUserRoleChange(user.id, "admin")
-                                        }
-                                      >
-                                        Admin
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() =>
-                                          handleUserRoleChange(
-                                            user.id,
-                                            "moderator",
-                                          )
-                                        }
-                                      >
-                                        Moderator
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() =>
-                                          handleUserRoleChange(user.id, "user")
-                                        }
-                                      >
-                                        User
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </PermissionWrapper>
-                                <PermissionWrapper
-                                  permissions={{ user: ["delete"] }}
-                                >
-                                  <DropdownMenuItem
-                                    onClick={() => handleDeleteUser(user.id)}
-                                  >
-                                    Delete User
-                                  </DropdownMenuItem>
-                                </PermissionWrapper>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
+              {usersLoading ? (
+                <div>Loading users...</div>
+              ) : (
+                <>
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center">
-                          No users found
-                        </TableCell>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Joined</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-                {/* Pagination Controls */}
-                <div className="flex items-center justify-between py-4">
-                  <div className="text-sm text-gray-500">
-                    Showing {userPage * usersPerPage + 1} to{" "}
-                    {Math.min(
-                      (userPage + 1) * usersPerPage,
-                                      filteredUsers.length,
-                                    )}{" "}
-                                    of {filteredUsers.length} users
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setUserPage(Math.max(0, userPage - 1))}
-                      disabled={userPage === 0}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setUserPage(
-                                          (userPage + 1) * usersPerPage < filteredUsers.length
-                                            ? userPage + 1
-                                            : userPage,
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedUsers && paginatedUsers.length > 0 ? (
+                        paginatedUsers.map((user: any) => (
+                          <TableRow key={user.id}>
+                            <TableCell>{user.name}</TableCell>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>{user.role || "user"}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  !user.banned ? "default" : "destructive"
+                                }
+                              >
+                                {!user.banned ? "active" : "banned"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {user.createdAt
+                                ? new Date(user.createdAt).toLocaleDateString()
+                                : "N/A"}
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <span className="sr-only">Open menu</span>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem>Edit User</DropdownMenuItem>
+                                  <PermissionWrapper
+                                    permissions={{ user: ["ban"] }}
+                                  >
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleBanUser(
+                                          user.id,
+                                          user.banned ?? false,
                                         )
                                       }
-                                      disabled={
-                                        (userPage + 1) * usersPerPage >= filteredUsers.length
-                      }
-                    >
-                      Next
-                    </Button>
+                                    >
+                                      {user.banned ? "Unban User" : "Ban User"}
+                                    </DropdownMenuItem>
+                                  </PermissionWrapper>
+                                  <PermissionWrapper
+                                    permissions={{ user: ["update"] }}
+                                  >
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <DropdownMenuItem>
+                                          Change Role
+                                        </DropdownMenuItem>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent>
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            handleUserRoleChange(
+                                              user.id,
+                                              "admin",
+                                            )
+                                          }
+                                        >
+                                          Admin
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            handleUserRoleChange(
+                                              user.id,
+                                              "moderator",
+                                            )
+                                          }
+                                        >
+                                          Moderator
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            handleUserRoleChange(
+                                              user.id,
+                                              "user",
+                                            )
+                                          }
+                                        >
+                                          User
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </PermissionWrapper>
+                                  <PermissionWrapper
+                                    permissions={{ user: ["delete"] }}
+                                  >
+                                    <DropdownMenuItem
+                                      onClick={() => handleDeleteUser(user.id)}
+                                    >
+                                      Delete User
+                                    </DropdownMenuItem>
+                                  </PermissionWrapper>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center">
+                            No users found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                  {/* Pagination Controls */}
+                  <div className="flex items-center justify-between py-4">
+                    <div className="text-sm text-gray-500">
+                      Showing {userPage * usersPerPage + 1} to{" "}
+                      {Math.min(
+                        (userPage + 1) * usersPerPage,
+                        filteredUsers.length,
+                      )}{" "}
+                      of {filteredUsers.length} users
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setUserPage(Math.max(0, userPage - 1))}
+                        disabled={userPage === 0}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setUserPage(
+                            (userPage + 1) * usersPerPage < filteredUsers.length
+                              ? userPage + 1
+                              : userPage,
+                          )
+                        }
+                        disabled={
+                          (userPage + 1) * usersPerPage >= filteredUsers.length
+                        }
+                      >
+                        Next
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
-          </CardContent>
+                </>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="comments">
-          <CardHeader>
-            <CardTitle>Moderate Comments</CardTitle>
-            <CardDescription>Review and moderate user comments</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <Input
-                  placeholder="Search comments..."
-                  className="max-w-sm"
-                  value={searchComment}
-                  onChange={(e) => setSearchComment(e.target.value)}
-                />
+          <Card>
+            <CardHeader>
+              <CardTitle>Moderate Comments</CardTitle>
+              <CardDescription>
+                Review and moderate user comments
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <Input
+                    placeholder="Search comments..."
+                    className="max-w-sm"
+                    value={searchComment}
+                    onChange={(e) => setSearchComment(e.target.value)}
+                  />
+                  <div className="flex items-center space-x-1">
+                    <Button
+                      variant={
+                        moderationStatusFilter === null ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => setModerationStatusFilter(null)}
+                      className="flex items-center space-x-1"
+                    >
+                      <Filter className="h-4 w-4" />
+                      <span>All</span>
+                    </Button>
+                    <Button
+                      variant={
+                        moderationStatusFilter === "verified"
+                          ? "default"
+                          : "outline"
+                      }
+                      size="sm"
+                      onClick={() => setModerationStatusFilter("verified")}
+                      className="flex items-center space-x-1"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Verified</span>
+                    </Button>
+                    <Button
+                      variant={
+                        moderationStatusFilter === "pending"
+                          ? "default"
+                          : "outline"
+                      }
+                      size="sm"
+                      onClick={() => setModerationStatusFilter("pending")}
+                      className="flex items-center space-x-1"
+                    >
+                      <Clock className="h-4 w-4" />
+                      <span>Pending</span>
+                    </Button>
+                    <Button
+                      variant={
+                        moderationStatusFilter === "rejected"
+                          ? "default"
+                          : "outline"
+                      }
+                      size="sm"
+                      onClick={() => setModerationStatusFilter("rejected")}
+                      className="flex items-center space-x-1"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      <span>Rejected</span>
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div className="flex space-x-2">
-                <PermissionWrapper permissions={{ comment: ["verify"] }}>
-                  <Button variant="outline">Approve All</Button>
-                </PermissionWrapper>
-                <PermissionWrapper permissions={{ comment: ["verify"] }}>
-                  <Button variant="outline">Reject All</Button>
-                </PermissionWrapper>
-              </div>
-            </div>
-            {commentsLoading ? (
-              <div>Loading comments...</div>
-            ) : (
-                          <>
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>User</TableHead>
-                                  <TableHead>Content</TableHead>
-                                  <TableHead>Word</TableHead>
-                                  <TableHead>Status</TableHead>
-                                  <TableHead>Date</TableHead>
-                                  <TableHead>Actions</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {paginatedComments && paginatedComments.length > 0 ? (
-                                  paginatedComments.map(
-                                    ({
-                                      comment,
-                                      entry,
-                                      user,
-                                    }: {
-                                      user: any;
-                                      comment: any;
-                                      entry: any;
-                                    }) => (
-                                      <TableRow key={comment.id}>
-                                        <TableCell>{user?.name || "Unknown User"}</TableCell>
-                                        <TableCell>{comment.text}</TableCell>
-                                        <TableCell>{entry?.word || "N/A"}</TableCell>
-                                        <TableCell>
-                                          <Badge variant="secondary">
-                                            {comment.moderationStatus}
-                                          </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                          {comment.createdAt
-                                            ? new Date(comment.createdAt).toLocaleDateString()
-                                            : "N/A"}
-                                        </TableCell>
-                                        <TableCell>
-                                          <div className="flex space-x-2">
-                                            <PermissionWrapper
-                                              permissions={{ comment: ["verify"] }}
-                                            >
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() =>
-                                                  handleApproveComment(comment.id)
-                                                }
-                                              >
-                                                Approve
-                                              </Button>
-                                            </PermissionWrapper>
-                                            <PermissionWrapper
-                                              permissions={{ comment: ["verify"] }}
-                                            >
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() =>
-                                                  handleRejectComment(comment.id)
-                                                }
-                                              >
-                                                Reject
-                                              </Button>
-                                            </PermissionWrapper>
-                                            <PermissionWrapper
-                                              permissions={{ comment: ["delete"] }}
-                                            >
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() =>
-                                                  handleDeleteComment(comment.id)
-                                                }
-                                              >
-                                                Delete
-                                              </Button>
-                                            </PermissionWrapper>
-                                          </div>
-                                        </TableCell>
-                                      </TableRow>
-                                    ),
-                                  )
-                                ) : (
-                                  <TableRow>
-                                    <TableCell colSpan={6} className="text-center">
-                                      No comments found
-                                    </TableCell>
-                                  </TableRow>
-                                )}
-                              </TableBody>
-                            </Table>
-                            {/* Pagination Controls for Comments */}
-                            <div className="flex items-center justify-between py-4">
-                              <div className="text-sm text-gray-500">
-                                Showing {commentPage * commentsPerPage + 1} to{" "}
-                                {Math.min(
-                                  (commentPage + 1) * commentsPerPage,
-                                  filteredComments.length,
-                                )}{" "}
-                                of {filteredComments.length} comments
-                              </div>
-                              <div className="flex space-x-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setCommentPage(Math.max(0, commentPage - 1))}
-                                  disabled={commentPage === 0}
-                                >
-                                  Previous
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    setCommentPage(
-                                      (commentPage + 1) * commentsPerPage < filteredComments.length
-                                        ? commentPage + 1
-                                        : commentPage,
-                                    )
-                                  }
-                                  disabled={
-                                    (commentPage + 1) * commentsPerPage >= filteredComments.length
-                                  }
-                                >
-                                  Next
-                                </Button>
-                              </div>
-                            </div>
-                          </>
-            )}
-          </CardContent>
+              {commentsLoading ? (
+                <div>Loading comments...</div>
+              ) : (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead
+                          className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                          onClick={() => requestSort("user")}
+                        >
+                          User {getSortIcon("user")}
+                        </TableHead>
+                        <TableHead
+                          className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                          onClick={() => requestSort("content")}
+                        >
+                          Content {getSortIcon("content")}
+                        </TableHead>
+                        <TableHead
+                          className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                          onClick={() => requestSort("word")}
+                        >
+                          Word {getSortIcon("word")}
+                        </TableHead>
+                        <TableHead
+                          className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                          onClick={() => requestSort("status")}
+                        >
+                          Status {getSortIcon("status")}
+                        </TableHead>
+                        <TableHead
+                          className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                          onClick={() => requestSort("date")}
+                        >
+                          Date {getSortIcon("date")}
+                        </TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedComments && paginatedComments.length > 0 ? (
+                        paginatedComments.map(
+                          ({
+                            comment,
+                            entry,
+                            user,
+                          }: {
+                            user: any;
+                            comment: any;
+                            entry: any;
+                          }) => (
+                            <TableRow key={comment.id}>
+                              <TableCell>
+                                {user?.name || "Unknown User"}
+                              </TableCell>
+                              <TableCell>{comment.text}</TableCell>
+                              <TableCell>{entry?.word || "N/A"}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary">
+                                  {comment.moderationStatus}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {comment.createdAt
+                                  ? new Date(
+                                    comment.createdAt,
+                                  ).toLocaleDateString()
+                                  : "N/A"}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex space-x-2">
+                                  <PermissionWrapper
+                                    permissions={{ comment: ["verify"] }}
+                                  >
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleApproveComment(comment.id)
+                                      }
+                                    >
+                                      Approve
+                                    </Button>
+                                  </PermissionWrapper>
+                                  <PermissionWrapper
+                                    permissions={{ comment: ["verify"] }}
+                                  >
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleRejectComment(comment.id)
+                                      }
+                                    >
+                                      Reject
+                                    </Button>
+                                  </PermissionWrapper>
+                                  <PermissionWrapper
+                                    permissions={{ comment: ["delete"] }}
+                                  >
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleDeleteComment(comment.id)
+                                      }
+                                    >
+                                      Delete
+                                    </Button>
+                                  </PermissionWrapper>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ),
+                        )
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center">
+                            No comments found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                  {/* Pagination Controls for Comments */}
+                  <div className="flex items-center justify-between py-4">
+                    <div className="text-sm text-gray-500">
+                      Showing {commentPage * commentsPerPage + 1} to{" "}
+                      {Math.min(
+                        (commentPage + 1) * commentsPerPage,
+                        filteredComments.length,
+                      )}{" "}
+                      of {filteredComments.length} comments
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCommentPage(Math.max(0, commentPage - 1))
+                        }
+                        disabled={commentPage === 0}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCommentPage(
+                            (commentPage + 1) * commentsPerPage <
+                              filteredComments.length
+                              ? commentPage + 1
+                              : commentPage,
+                          )
+                        }
+                        disabled={
+                          (commentPage + 1) * commentsPerPage >=
+                          filteredComments.length
+                        }
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
