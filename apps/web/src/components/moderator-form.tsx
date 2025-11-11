@@ -36,28 +36,57 @@ export default function ModeratorForm() {
   const [searchUser, setSearchUser] = useState("");
   const [searchComment, setSearchComment] = useState("");
   const [userPage, setUserPage] = useState(0);
+  const [commentPage, setCommentPage] = useState(0);
   const [usersPerPage] = useState(10);
+  const [commentsPerPage] = useState(10);
   const queryClient = useQueryClient();
 
-  // Fetch users with pagination
+  // Fetch all users (for client-side pagination)
   const { data: usersResponse, isLoading: usersLoading } = useQuery({
-    queryKey: ["users", userPage],
+    queryKey: ["users"],
     queryFn: async () => {
+      // Fetch all users for client-side pagination
       const { data } = await authClient.admin.listUsers({
         query: {
-          limit: usersPerPage,
-          offset: userPage * usersPerPage,
+          limit: 1000, // Fetch a large number to get all users
+          offset: 0,
         },
       });
       return data;
     },
-  });
+    });
+  
+    // Filter users based on search term
+    const filteredUsers = usersResponse?.users?.filter((user: any) =>
+      user.name?.toLowerCase().includes(searchUser.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchUser.toLowerCase()) ||
+      user.role?.toLowerCase().includes(searchUser.toLowerCase())
+    ) || [];
+  
+    // Paginate filtered users
+    const paginatedUsers = filteredUsers.slice(
+      userPage * usersPerPage,
+      (userPage + 1) * usersPerPage
+    );
 
   // Fetch comments
   const { data: commentsData, isLoading: commentsLoading } = useQuery({
     ...orpc.comment.getAll.queryOptions(),
     queryKey: ["comments"],
-  });
+    });
+  
+    // Filter comments based on search term
+    const filteredComments = commentsData?.filter(({ comment, user }: { comment: any; user: any }) =>
+      comment.text?.toLowerCase().includes(searchComment.toLowerCase()) ||
+      user?.name?.toLowerCase().includes(searchComment.toLowerCase()) ||
+      comment.moderationStatus?.toLowerCase().includes(searchComment.toLowerCase())
+    ) || [];
+  
+    // Paginate filtered comments
+    const paginatedComments = filteredComments.slice(
+      commentPage * commentsPerPage,
+      (commentPage + 1) * commentsPerPage
+    );
   const handleBanUser = async (userId: string, isBanned: boolean) => {
     try {
       const session = await authClient.getSession();
@@ -236,8 +265,8 @@ export default function ModeratorForm() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {usersResponse?.users && usersResponse.users.length > 0 ? (
-                      usersResponse.users.map((user: any) => (
+                                      {paginatedUsers && paginatedUsers.length > 0 ? (
+                                        paginatedUsers.map((user: any) => (
                         <TableRow key={user.id}>
                           <TableCell>{user.name}</TableCell>
                           <TableCell>{user.email}</TableCell>
@@ -344,9 +373,9 @@ export default function ModeratorForm() {
                     Showing {userPage * usersPerPage + 1} to{" "}
                     {Math.min(
                       (userPage + 1) * usersPerPage,
-                      usersResponse?.total || 0,
-                    )}{" "}
-                    of {usersResponse?.total || 0} users
+                                      filteredUsers.length,
+                                    )}{" "}
+                                    of {filteredUsers.length} users
                   </div>
                   <div className="flex space-x-2">
                     <Button
@@ -362,15 +391,13 @@ export default function ModeratorForm() {
                       size="sm"
                       onClick={() =>
                         setUserPage(
-                          usersResponse &&
-                            (userPage + 1) * usersPerPage < usersResponse.total
-                            ? userPage + 1
-                            : userPage,
-                        )
-                      }
-                      disabled={
-                        usersResponse &&
-                        (userPage + 1) * usersPerPage >= usersResponse.total
+                                          (userPage + 1) * usersPerPage < filteredUsers.length
+                                            ? userPage + 1
+                                            : userPage,
+                                        )
+                                      }
+                                      disabled={
+                                        (userPage + 1) * usersPerPage >= filteredUsers.length
                       }
                     >
                       Next
@@ -409,98 +436,137 @@ export default function ModeratorForm() {
             {commentsLoading ? (
               <div>Loading comments...</div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Content</TableHead>
-                    <TableHead>Word</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {commentsData && commentsData.length > 0 ? (
-                    commentsData.map(
-                      ({
-                        comment,
-                        entry,
-                        user,
-                      }: {
-                        user: any;
-                        comment: any;
-                        entry: any;
-                      }) => (
-                        <TableRow key={comment.id}>
-                          <TableCell>{user?.name || "Unknown User"}</TableCell>
-                          <TableCell>{comment.text}</TableCell>
-                          <TableCell>{entry?.word || "N/A"}</TableCell>
-                          <TableCell>
-                            <Badge variant="secondary">
-                              {comment.moderationStatus}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {comment.createdAt
-                              ? new Date(comment.createdAt).toLocaleDateString()
-                              : "N/A"}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <PermissionWrapper
-                                permissions={{ comment: ["verify"] }}
-                              >
+                          <>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>User</TableHead>
+                                  <TableHead>Content</TableHead>
+                                  <TableHead>Word</TableHead>
+                                  <TableHead>Status</TableHead>
+                                  <TableHead>Date</TableHead>
+                                  <TableHead>Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {paginatedComments && paginatedComments.length > 0 ? (
+                                  paginatedComments.map(
+                                    ({
+                                      comment,
+                                      entry,
+                                      user,
+                                    }: {
+                                      user: any;
+                                      comment: any;
+                                      entry: any;
+                                    }) => (
+                                      <TableRow key={comment.id}>
+                                        <TableCell>{user?.name || "Unknown User"}</TableCell>
+                                        <TableCell>{comment.text}</TableCell>
+                                        <TableCell>{entry?.word || "N/A"}</TableCell>
+                                        <TableCell>
+                                          <Badge variant="secondary">
+                                            {comment.moderationStatus}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                          {comment.createdAt
+                                            ? new Date(comment.createdAt).toLocaleDateString()
+                                            : "N/A"}
+                                        </TableCell>
+                                        <TableCell>
+                                          <div className="flex space-x-2">
+                                            <PermissionWrapper
+                                              permissions={{ comment: ["verify"] }}
+                                            >
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() =>
+                                                  handleApproveComment(comment.id)
+                                                }
+                                              >
+                                                Approve
+                                              </Button>
+                                            </PermissionWrapper>
+                                            <PermissionWrapper
+                                              permissions={{ comment: ["verify"] }}
+                                            >
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() =>
+                                                  handleRejectComment(comment.id)
+                                                }
+                                              >
+                                                Reject
+                                              </Button>
+                                            </PermissionWrapper>
+                                            <PermissionWrapper
+                                              permissions={{ comment: ["delete"] }}
+                                            >
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() =>
+                                                  handleDeleteComment(comment.id)
+                                                }
+                                              >
+                                                Delete
+                                              </Button>
+                                            </PermissionWrapper>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    ),
+                                  )
+                                ) : (
+                                  <TableRow>
+                                    <TableCell colSpan={6} className="text-center">
+                                      No comments found
+                                    </TableCell>
+                                  </TableRow>
+                                )}
+                              </TableBody>
+                            </Table>
+                            {/* Pagination Controls for Comments */}
+                            <div className="flex items-center justify-between py-4">
+                              <div className="text-sm text-gray-500">
+                                Showing {commentPage * commentsPerPage + 1} to{" "}
+                                {Math.min(
+                                  (commentPage + 1) * commentsPerPage,
+                                  filteredComments.length,
+                                )}{" "}
+                                of {filteredComments.length} comments
+                              </div>
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setCommentPage(Math.max(0, commentPage - 1))}
+                                  disabled={commentPage === 0}
+                                >
+                                  Previous
+                                </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() =>
-                                    handleApproveComment(comment.id)
+                                    setCommentPage(
+                                      (commentPage + 1) * commentsPerPage < filteredComments.length
+                                        ? commentPage + 1
+                                        : commentPage,
+                                    )
+                                  }
+                                  disabled={
+                                    (commentPage + 1) * commentsPerPage >= filteredComments.length
                                   }
                                 >
-                                  Approve
+                                  Next
                                 </Button>
-                              </PermissionWrapper>
-                              <PermissionWrapper
-                                permissions={{ comment: ["verify"] }}
-                              >
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleRejectComment(comment.id)
-                                  }
-                                >
-                                  Reject
-                                </Button>
-                              </PermissionWrapper>
-                              <PermissionWrapper
-                                permissions={{ comment: ["delete"] }}
-                              >
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleDeleteComment(comment.id)
-                                  }
-                                >
-                                  Delete
-                                </Button>
-                              </PermissionWrapper>
+                              </div>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      ),
-                    )
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center">
-                        No comments found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                          </>
             )}
           </CardContent>
         </TabsContent>
