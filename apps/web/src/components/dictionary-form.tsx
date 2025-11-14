@@ -1,7 +1,8 @@
-import {useState, useEffect} from "react";
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
-import {Textarea} from "@/components/ui/textarea";
+import { useState } from "react";
+import React, { ChangeEvent } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
 	Card,
 	CardContent,
@@ -22,6 +23,36 @@ import {Alert, AlertDescription} from "@/components/ui/alert";
 import {Loader2, Plus, Trash2, Edit3} from "lucide-react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {orpc} from "@/utils/orpc";
+
+interface DictionarySelectProps {
+	dictionaries: any;
+	value: string;
+	onValueChange: (value: string) => void;
+}
+
+const DictionarySelect = ({
+	dictionaries,
+	value,
+	onValueChange,
+}: DictionarySelectProps) => {
+	if (!dictionaries) {
+		return;
+	}
+	return (
+		<Select value={value} onValueChange={onValueChange}>
+			<SelectTrigger>
+				<SelectValue placeholder="Choose a dictionary" />
+			</SelectTrigger>
+			<SelectContent>
+				{dictionaries.map((dict: any) => (
+					<SelectItem key={dict.id} value={dict.id}>
+						{dict.name}
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
+	);
+};
 
 export default function DictionaryAdminForm() {
 	const queryClient = useQueryClient();
@@ -298,7 +329,51 @@ export default function DictionaryAdminForm() {
 		});
 		setIsEditingEntry(false);
 	};
+	const [importData, setImportData] = useState<any | null>(null);
+	const [importStatus, setImportStatus] = useState<string>("");
 
+	// 📂 Funkcja do wczytywania pliku JSON
+	const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		const reader = new FileReader();
+		reader.onload = (event) => {
+			try {
+				const result = event.target?.result as string;
+				const jsonData = JSON.parse(result);
+				setImportData(jsonData);
+				setImportStatus("✅ Plik JSON wczytany poprawnie");
+			} catch (error) {
+				console.error("Błąd parsowania JSON:", error);
+				setImportStatus("❌ Niepoprawny plik JSON");
+			}
+		};
+		reader.readAsText(file);
+	};
+
+	const { mutateAsync: importJson } = useMutation(
+		orpc.entry.importFromJson.mutationOptions(),
+	);
+
+	const handleImport = async () => {
+		if (!importData) {
+			setImportStatus("! Najpierw wczytaj plik JSON");
+			return;
+		}
+
+		try {
+			setImportStatus("⏳ Importowanie danych...");
+			await importJson({
+				dictionaryId: entryForm.dictionaryId,
+				jsonData: importData,
+			});
+			setImportStatus("🎉 Import zakończony sukcesem!");
+		} catch (err) {
+			console.error(err);
+			setImportStatus("❌ Błąd podczas importu danych");
+		}
+	};
 	return (
 		<div className="container px-4 py-4 sm:p-6 md:p-12 mx-auto max-w-6xl">
 			<div className="flex flex-col gap-3 mb-4 sm:mb-6">
@@ -323,27 +398,14 @@ export default function DictionaryAdminForm() {
 			)}
 
 			<Tabs value={activeTab} onValueChange={setActiveTab}>
-				<TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-6 gap-1 h-auto">
-					<TabsTrigger
-						value="dictionary"
-						className="text-sm md:text-base px-2 py-1.5 md:py-2">
-						Dictionaries
+				<TabsList className="grid w-full grid-cols-5 mb-6">
+					<TabsTrigger value="dictionary">Dictionaries</TabsTrigger>
+					<TabsTrigger value="manage-dictionaries">
+						Manage Dictionaries
 					</TabsTrigger>
-					<TabsTrigger
-						value="manage-dictionaries"
-						className="text-sm md:text-base px-2 py-1.5 md:py-2">
-						<span className="truncate">Manage Dictionaries</span>
-					</TabsTrigger>
-					<TabsTrigger
-						value="entry"
-						className="text-sm md:text-base px-2 py-1.5 md:py-2">
-						Entries
-					</TabsTrigger>
-					<TabsTrigger
-						value="edit-entries"
-						className="text-sm md:text-base px-2 py-1.5 md:py-2">
-						Manage Entries
-					</TabsTrigger>
+					<TabsTrigger value="entry">Entries</TabsTrigger>
+					<TabsTrigger value="edit-entries">Manage Entries</TabsTrigger>
+					<TabsTrigger value="import">Import</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="dictionary">
@@ -518,22 +580,13 @@ export default function DictionaryAdminForm() {
 							<form onSubmit={handleEntrySubmit} className="space-y-4">
 								<div className="space-y-2">
 									<Label htmlFor="entry-dictionary">Select Dictionary *</Label>
-									<Select
+									<DictionarySelect
+										dictionaries={dictionaries}
 										value={entryForm.dictionaryId}
 										onValueChange={(value) =>
-											setEntryForm({...entryForm, dictionaryId: value})
-										}>
-										<SelectTrigger id="entry-dictionary">
-											<SelectValue placeholder="Choose a dictionary" />
-										</SelectTrigger>
-										<SelectContent>
-											{dictionaries.map((dict: any) => (
-												<SelectItem key={dict.id} value={dict.id}>
-													{dict.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
+											setEntryForm({ ...entryForm, dictionaryId: value })
+										}
+									/>
 								</div>
 
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
@@ -730,6 +783,52 @@ export default function DictionaryAdminForm() {
 										);
 									})}
 								</div>
+							)}
+						</CardContent>
+					</Card>
+				</TabsContent>
+				<TabsContent value="import">
+					<Card>
+						<CardHeader>
+							<CardTitle>Import file.</CardTitle>
+							<CardDescription>
+								Send JSON file format with data.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<DictionarySelect
+								dictionaries={dictionaries}
+								value={entryForm.dictionaryId}
+								onValueChange={(value) =>
+									setEntryForm({ ...entryForm, dictionaryId: value })
+								}
+							/>
+							<form className="mt-4 gap-4 border-1 p-3">
+								<Input
+									type="file"
+									id="fileInput"
+									accept=".json"
+									onChange={handleFileChange}
+									className="hidden"
+								/>
+								<Label
+									htmlFor="fileInput"
+									className="text-xl font-bold flex flex-col"
+								>
+									<p>Import file</p>
+									<p className="mt-2 text-sm text-gray-600">{"File name"}</p>
+								</Label>
+							</form>
+							<Button className="mt-4" onClick={handleImport}>
+								Send data.
+							</Button>
+							{importData?.metadata?.total_matches && (
+								<p className="mt-3 text-sm text-green-400">
+									Wczytano {importData?.metadata?.total_matches} elementów.
+								</p>
+							)}
+							{importStatus && (
+								<p className="mt-4 text-sm text-gray-300">{importStatus}</p>
 							)}
 						</CardContent>
 					</Card>
