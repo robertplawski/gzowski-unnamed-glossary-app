@@ -1,6 +1,12 @@
 import { Input } from "@/components/ui/input";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, type SetStateAction, type Dispatch } from "react";
+import {
+  useState,
+  useEffect,
+  type SetStateAction,
+  type Dispatch,
+  useMemo,
+} from "react";
 import { orpc } from "@/utils/orpc";
 import { useQuery } from "@tanstack/react-query";
 import { EntryCard } from "@/components/entry-card";
@@ -50,7 +56,6 @@ function PaginationComponent({
   pageSize: number;
 }) {
   const maxButtonCount = 5;
-
   const startPage = Math.max(1, page + 1 - Math.floor(maxButtonCount / 2));
   const endPage = Math.min(total, startPage + maxButtonCount - 1);
 
@@ -152,14 +157,18 @@ function RouteComponent() {
       ? searchResults?.entries || []
       : getAllResults?.entries || [];
 
-  const total =
-    debouncedSearchTerm.length > 0
-      ? Math.ceil(searchResults?.pagination.total / pageSize) || 0
-      : Math.ceil(getAllResults?.pagination.total / pageSize) || 0;
-
-  // Get search results with match information for enhanced display
-  const searchResultsWithMatchInfo =
-    debouncedSearchTerm.length > 0 ? searchResults : null;
+  // Calculate total pages correctly handling undefined cases
+  const total = useMemo(
+    () =>
+      debouncedSearchTerm.length > 0
+        ? searchResults?.pagination?.total
+          ? Math.ceil(searchResults.pagination.total / pageSize)
+          : 0
+        : getAllResults?.pagination?.total
+          ? Math.ceil(getAllResults.pagination.total / pageSize)
+          : 0,
+    [pageSize, getAllResults, searchResults, debouncedSearchTerm.length],
+  );
 
   const displayIsLoading =
     debouncedSearchTerm.length > 0 ? isLoading : isLoadingAll;
@@ -193,64 +202,53 @@ function RouteComponent() {
           className="bg-background"
         />
 
-        <PaginationComponent
-          setPage={setPage}
-          total={total}
-          page={page}
-          pageSize={pageSize}
-        />
-        {displayIsLoading ? (
-          <p className="text-muted-foreground">
-            {debouncedSearchTerm.length > 0
-              ? "Searching..."
-              : "Loading entries..."}
-          </p>
-        ) : (
-          <div>
-            <div className="grid gap-4">
-              {displayData.map((entry) => (
-                <EntryCard key={entry.id} entry={entry} />
-              ))}
-            </div>
-            {debouncedSearchTerm.length > 0 && (
-              <div className="text-sm text-muted-foreground mb-4 mt-4 space-y-1">
-                <p>
-                  Found {displayData.length} result(s)
-                  {searchResults?.pagination &&
-                    searchResults.pagination.total > displayData.length &&
-                    ` out of ${searchResults.pagination.total}`}
-                </p>
-                {searchResults?.searchStats && (
-                  <div className="text-xs opacity-75">
-                    <p>
-                      Average score: {searchResults.searchStats.averageScore}
-                    </p>
-                    {displayData.length > 0 && (
-                      <p>
-                        Match types:{" "}
-                        {Object.entries(
-                          searchResults.searchStats.matchTypeDistribution,
-                        )
-                          .map(([type, count]) => `${type} (${count})`)
-                          .join(", ")}
-                      </p>
-                    )}
-                    <p>
-                      Search time: {searchResults.searchStats.executionTime}ms
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+        <div className="flex flex-col gap-4">
+          <PaginationComponent
+            setPage={setPage}
+            total={total}
+            page={page}
+            pageSize={pageSize}
+          />
+          <div className="grid gap-4">
+            {displayData.map((entry) => (
+              <EntryCard key={entry.id} entry={entry} />
+            ))}
           </div>
-        )}
-
-        <PaginationComponent
-          setPage={setPage}
-          total={total}
-          page={page}
-          pageSize={pageSize}
-        />
+          {debouncedSearchTerm.length > 0 && searchResults && (
+            <div className="text-sm text-muted-foreground mb-4 mt-4 space-y-1">
+              <p>
+                Found {displayData.length} result(s)
+                {searchResults.pagination &&
+                  searchResults.pagination.total > displayData.length &&
+                  ` out of ${searchResults.pagination.total}`}
+              </p>
+              {searchResults.searchStats && (
+                <div className="text-xs opacity-75">
+                  <p>Average score: {searchResults.searchStats.averageScore}</p>
+                  {displayData.length > 0 && (
+                    <p>
+                      Match types:{" "}
+                      {Object.entries(
+                        searchResults.searchStats.matchTypeDistribution,
+                      )
+                        .map(([type, count]) => `${type} (${count})`)
+                        .join(", ")}
+                    </p>
+                  )}
+                  <p>
+                    Search time: {searchResults.searchStats.executionTime}ms
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          <PaginationComponent
+            setPage={setPage}
+            total={total}
+            page={page}
+            pageSize={pageSize}
+          />
+        </div>
       </div>
     </div>
   );
