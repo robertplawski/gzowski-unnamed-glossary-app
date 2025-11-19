@@ -1,5 +1,6 @@
 import { eq, or, sql, like, desc, gt } from "drizzle-orm";
 import {
+  dictionary,
   entry,
   entryVote,
 } from "@gzowski-unnamed-glossary-app/db/schema/dictionary";
@@ -252,15 +253,22 @@ export const entryRouter = {
           .get();
         const totalCount = totalCountResult?.count ?? 0;
         const entries = await db
-          .select()
+          .select({
+            entry: entry,
+            dictionary: dictionary,
+          })
           .from(entry)
           .limit(limit)
           .offset(offset)
+          .leftJoin(dictionary, eq(entry.dictionaryId, dictionary.id))
           .all();
+        const fixedEntries = entries.map((v) => {
+          return { ...v.entry, dictionary: v.dictionary };
+        });
 
         // Enrich with remote data
         const enrichedEntries = await enrichEntriesWithRemoteData(
-          entries,
+          fixedEntries,
           context,
         );
         return {
