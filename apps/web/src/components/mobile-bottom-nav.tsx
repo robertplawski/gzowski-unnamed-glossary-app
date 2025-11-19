@@ -13,7 +13,7 @@ export default function MobileBottomNav() {
 	return (
 		<nav
 			aria-label="Mobile navigation"
-			className="overflow-hidden flex flex-col fixed bottom-0 left-0 inset-x-0 md:hidden z-40 border-t bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+			className="bottom-0 left-0 overflow-hidden flex flex-col fixed bottom-0 left-0 inset-x-0 md:hidden z-40 border-t bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/60"
 		>
 			<div
 				className={`w-full max-w-6xl grid overflow-hidden transition-[height] ${isOpened ? "h-16" : "h-0"}`}

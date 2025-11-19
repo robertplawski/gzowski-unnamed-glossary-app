@@ -307,8 +307,8 @@ export default function ModeratorForm() {
   );
 
   return (
-    <div className="container px-4 py-4 sm:p-6 md:p-12 mx-auto max-w-6xl">
-      <div className="flex flex-col gap-3 mb-4 sm:mb-6">
+    <div className="container px-4 py-4 sm:p-6 md:p-12 mx-auto ">
+      <div className="flex flex-col gap-3 mb-4 sm:mb-6 ">
         <h1 className="text-2xl sm:text-3xl font-bold">Moderator Dashboard</h1>
         <p className="text-sm sm:text-base">
           Manage users and moderate comments
@@ -316,7 +316,7 @@ export default function ModeratorForm() {
       </div>
 
       <Tabs defaultValue="users">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-2 mb-6 gap-1 h-auto">
+        <TabsList className="grid w-full grid-cols-1 md:grid-cols-2 mb-6 gap-1 h-auto">
           <TabsTrigger
             value="users"
             className="text-sm md:text-base px-2 py-1.5 md:py-2"
