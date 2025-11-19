@@ -1,12 +1,20 @@
 import {Input} from "@/components/ui/input";
-import {createFileRoute} from "@tanstack/react-router";
+import {createFileRoute, useSearch} from "@tanstack/react-router";
 import {useState, useEffect} from "react";
 import {orpc} from "@/utils/orpc";
 import {useQuery} from "@tanstack/react-query";
 import {EntryCard} from "@/components/entry-card";
 
 export const Route = createFileRoute("/glossary")({
-	component: RouteComponent,
+    component: RouteComponent,
+    validateSearch: (search) => {
+        const rawQ = (search.q as string | undefined) ?? undefined;
+        const rawQuery = (search.query as string | undefined) ?? undefined;
+        return {
+            q: rawQ,
+            query: rawQuery,
+        };
+    },
 });
 
 // Custom debounce hook
@@ -28,7 +36,29 @@ function useDebounce(value: string, delay: number) {
 
 // Main Route Component
 function RouteComponent() {
-	const [searchTerm, setSearchTerm] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
+    const { q, query } = useSearch({ from: "/glossary" });
+
+    // Normalize and decode URL search parameter
+    function normalizeSearchParam(value?: string | null): string {
+        if (!value) return "";
+        let decoded = value;
+        try {
+            decoded = decodeURIComponent(value);
+        } catch {
+            decoded = value; // Fallback if already decoded or malformed
+        }
+        const trimmed = decoded.trim();
+        return trimmed;
+    }
+
+    // Sync local input state with URL params (without pushing updates back to URL)
+    useEffect(() => {
+        const urlQuery = normalizeSearchParam(query ?? q ?? "");
+        if (urlQuery.length > 0) {
+            setSearchTerm(urlQuery);
+        }
+    }, [q, query]);
 	const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
 	// Search procedure
