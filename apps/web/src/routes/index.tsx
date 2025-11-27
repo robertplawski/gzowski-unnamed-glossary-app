@@ -297,7 +297,7 @@ function HomeComponent() {
 
             <div className="mt-8 flex flex-col sm:flex-row gap-4">
               <a
-                href="https://github.com/gzowski/guga    "
+                href="https://github.com/robertplawski/gzowski-unnamed-glossary-app"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center px-6 py-3 bg-foreground text-background rounded-lg font-medium hover:bg-muted-foreground transition-colors"
@@ -312,7 +312,9 @@ function HomeComponent() {
                 View Repository
               </a>
               <a
-                href="/contribute"
+                href="https://github.com/robertplawski/gzowski-unnamed-glossary-app"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
               >
                 Contribute Now
