@@ -1,5 +1,44 @@
 # gzowski-unnamed-glossary-app
 
+GUGA (Gzowski Unnamed Glossary App) is a modern vocabulary learning platform designed to help users understand and remember English terms effortlessly. Built with clarity and simplicity at its core, GUGA transforms how you learn, retain, and apply new words in everyday contexts.
+
+## Why GUGA?
+
+Traditional dictionaries often overwhelm with complexity. GUGA solves this by providing:
+- **Simple, intuitive definitions** that stick in your memory
+- **Real-life usage examples** that show words in context
+- **Clean interface** designed specifically for vocabulary retention
+
+## Who Is It For?
+
+GUGA is perfect for:
+- Language learners improving their fluency
+- Students preparing for exams
+- Professionals who need quick clarity on terminology
+- Anyone who values simple, accurate definitions without jargon
+
+## Project Vision
+
+We believe language learning should be simple, intuitive, and enjoyable. GUGA is built by students from Gzowski who are passionate about making vocabulary acquisition effortless and effective.
+
+## Open Source & Community
+
+GUGA is proudly open source! We welcome contributions from developers worldwide. Whether you're fixing a typo or adding a new feature, your contributions help make language learning better for everyone.
+
+## Contributing
+
+We welcome contributions from everyone! Whether you're fixing a typo or adding a new feature, your help makes GUGA better for language learners worldwide.
+
+1. Fork the repository
+2. Create your feature branch (git checkout -b feature/amazing-feature)
+3. Commit your changes (git commit -m 'Add some amazing feature')
+4. Push to the branch (git push origin feature/amazing-feature)
+5. Open a pull request
+
+## Getting Started
+
+First, install the dependencies:
+
 This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, ORPC, and more.
 
 ## Features
