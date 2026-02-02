@@ -69,9 +69,35 @@ export const commentRouter = {
         return db.select().from(comment).where(eq(comment.id, id)).get();
       }),
 
-    getByEntry: protectedProcedure
+    getByEntry: publicProcedure
       .input(commentsByEntrySchema)
       .handler(async ({ input: { entryId }, context }) => {
+        if (!context.session) {
+          return db
+            .select({
+              id: comment.id,
+              text: comment.text,
+              entryId: comment.entryId,
+              userId: comment.userId,
+              createdAt: comment.createdAt,
+              updatedAt: comment.updatedAt,
+              moderationStatus: comment.moderationStatus,
+              user,
+            })
+            .from(comment)
+            .leftJoin(user, eq(comment.userId, user.id))
+            .where(
+              and(
+                eq(comment.entryId, entryId),
+                or(
+                  eq(comment.moderationStatus, "verified"), // Verified comments from others
+                ),
+              ),
+            )
+            .orderBy(desc(comment.createdAt))
+            .all();
+        }
+
         const userId = context.session.user.id;
 
         return db
